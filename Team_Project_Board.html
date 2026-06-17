@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Project Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f4f6; --panel:#ffffff; --line:#e3e6ee; --text:#303447; --muted:#667085; --muted2:#7f8aa3;
+  --accent:#ff6a00; --accent-soft:#fff4ec; --pill:#eef2f6; --item:#f8fafc; --dark:#1f2435;
+  --ok-bg:#dcfce7; --ok-tx:#15803d; --risk-bg:#fef3c7; --risk-tx:#b45309; --block-bg:#fee2e2; --block-tx:#b91c1c;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:var(--text); background:var(--bg); padding:24px; -webkit-font-smoothing:antialiased}
+.top{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:18px; flex-wrap:wrap}
+.title{font-weight:800; font-size:22px; letter-spacing:-.01em}
+.sub{font-size:12.5px; color:var(--muted); margin-top:3px}
+.tools{display:flex; gap:9px; flex-wrap:wrap}
+.btn{font:inherit; font-size:12.5px; font-weight:700; border:1px solid var(--line); background:#fff; color:var(--text); border-radius:999px; padding:9px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background .15s,border-color .15s}
+.btn:hover{background:var(--item)}
+.btn.acc{background:var(--accent); color:#fff; border-color:var(--accent)}
+.btn.acc:hover{background:#e85f00}
+
+/* layout: static Projects column + stacked team lanes */
+.layout{display:flex; gap:14px; align-items:flex-start}
+.pool{flex:0 0 252px; position:sticky; top:24px; background:#fbfcfe; border:1px dashed var(--line); border-radius:16px; padding:12px 12px 14px; display:flex; flex-direction:column}
+.phead{display:flex; align-items:center; gap:9px; margin-bottom:11px}
+.ptitle{font-weight:800; font-size:14px}
+.pool .cards{display:flex; flex-direction:column; gap:8px; min-height:18px}
+.cnt{font-size:10.5px; font-weight:700; color:var(--muted); background:var(--pill); border-radius:999px; padding:2px 8px}
+
+.lanes{flex:1; min-width:0; display:flex; flex-direction:column; gap:12px}
+.lane{background:var(--panel); border:1px solid var(--line); border-radius:16px; display:flex; overflow:hidden; transition:outline .12s,background .12s}
+.lane-id{flex:0 0 172px; padding:14px; border-right:1px solid var(--line); display:flex; align-items:center; gap:10px; background:#fcfdff}
+.lane-meta{display:flex; flex-direction:column; gap:3px; min-width:0; flex:1}
+.lane-meta .nm{font-weight:700; font-size:13.5px; line-height:1.15; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lane-body{flex:1; padding:12px; display:flex; flex-wrap:wrap; gap:9px; align-content:flex-start; min-width:0}
+.lane-body .card{width:214px}
+.over{outline:2px dashed var(--accent); outline-offset:-2px; background:var(--accent-soft)}
+.pool.over{background:var(--accent-soft)}
+
+.av{width:31px; height:31px; border-radius:50%; color:#fff; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; background-size:cover; background-position:center}
+.pmenu{border:none; background:none; cursor:pointer; color:var(--muted2); font-size:16px; line-height:1; padding:2px 4px; border-radius:6px; flex:0 0 auto}
+.pmenu:hover{background:var(--item); color:var(--text)}
+
+.card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:9px 10px; box-shadow:0 1px 2px rgba(16,24,40,.05); position:relative; cursor:grab}
+.card:active{cursor:grabbing}
+.card.dragging{opacity:.45; border-color:var(--accent)}
+.card.priority{background:var(--dark); border-color:var(--dark); box-shadow:0 3px 9px rgba(16,24,40,.22)}
+.card.priority .pn{color:#fff}
+.card.priority .hd{color:#5c6580}
+.card.priority .x{color:#98a0b5}
+.card.priority .x:hover{background:rgba(255,255,255,.08); color:#fff}
+.card.priority .ic{background:rgba(255,255,255,.14)}
+.row{display:flex; align-items:center; gap:8px; padding-right:30px}
+.ic{width:27px; height:27px; border-radius:8px; background:var(--accent-soft); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; flex:0 0 auto; line-height:1}
+.ic:hover{outline:2px solid var(--accent); outline-offset:1px}
+.pn{font-size:12.5px; font-weight:600; line-height:1.25; cursor:text; word-break:break-word}
+.pn:hover{text-decoration:underline dotted var(--muted2)}
+.pn.editing{background:#fff; color:var(--text); outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; padding:0 3px; cursor:text; text-decoration:none}
+.st{margin-top:9px; font:inherit; font-size:10.5px; font-weight:700; border:none; border-radius:999px; padding:3px 10px; cursor:pointer}
+.st.ok{background:var(--ok-bg); color:var(--ok-tx)} .st.risk{background:var(--risk-bg); color:var(--risk-tx)} .st.block{background:var(--block-bg); color:var(--block-tx)}
+.x{position:absolute; top:7px; right:8px; border:none; background:none; color:#c0c6d4; font-size:15px; line-height:1; cursor:pointer; padding:2px 4px; border-radius:6px}
+.x:hover{background:#fdecec; color:var(--block-tx)}
+.hd{position:absolute; top:9px; right:26px; color:#d3d8e2; font-size:12px; pointer-events:none}
+
+.add{margin-top:10px; font:inherit; font-size:12px; font-weight:700; color:var(--muted); border:1px dashed var(--line); border-radius:10px; padding:9px; text-align:center; background:#fff; cursor:pointer; width:100%}
+.add:hover{border-color:var(--accent); color:var(--accent)}
+.addtile{font:inherit; font-size:12px; font-weight:700; color:var(--muted); border:1px dashed var(--line); border-radius:12px; background:#fff; cursor:pointer; width:120px; min-height:62px; display:flex; align-items:center; justify-content:center; align-self:flex-start}
+.addtile:hover{border-color:var(--accent); color:var(--accent)}
+
+.legend{display:flex; gap:15px; flex-wrap:wrap; margin-top:16px; font-size:11.5px; color:var(--muted); align-items:center}
+.legend b{color:var(--text)} .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle}
+.muted-note{margin-left:auto; color:var(--muted2)}
+
+.pop{position:absolute; z-index:100; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 12px 30px rgba(16,24,40,.16); padding:8px; min-width:150px}
+.pop button{display:flex; align-items:center; gap:8px; width:100%; text-align:left; font:inherit; font-size:13px; border:none; background:none; padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--text)}
+.pop button:hover{background:var(--item)}
+.pop .danger:hover{background:#fdecec; color:var(--block-tx)}
+.emoji-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px; max-width:266px}
+.emoji-grid button{font-size:18px; padding:6px; justify-content:center}
+
+@media(max-width:780px){
+  body{padding:14px}
+  .layout{flex-direction:column}
+  .pool{position:static; flex:auto; width:100%}
+  .lane{flex-direction:column}
+  .lane-id{flex:auto; border-right:none; border-bottom:1px solid var(--line)}
+  .lane-body .card{width:100%}
+  .muted-note{display:none}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <div class="title">Team Project Board</div>
+    <div class="sub">Drag a project into a person's lane &middot; click a name, icon, or status to change it</div>
+  </div>
+  <div class="tools">
+    <button class="btn acc" data-act="addproj-top">+ Add project</button>
+    <button class="btn" data-act="addperson">+ Add person</button>
+    <button class="btn" data-act="datamenu">&#8943; Data</button>
+  </div>
+</div>
+
+<div id="board"></div>
+
+<div class="legend">
+  <span><b>Status:</b></span>
+  <span><span class="dot" style="background:var(--ok-tx)"></span>On track</span>
+  <span><span class="dot" style="background:var(--risk-tx)"></span>At risk</span>
+  <span><span class="dot" style="background:var(--block-tx)"></span>Blocked</span>
+  <span class="muted-note">"Primary"/"Secondary" cards float to top &middot; saves to this browser automatically</span>
+</div>
+
+<input type="file" id="importer" accept="application/json" style="display:none">
+
+<script>
+(function(){
+  var KEY='teamProjectBoard.v1';
+  var STATUSES=['On track','At risk','Blocked'];
+  var STCLASS={'On track':'ok','At risk':'risk','Blocked':'block'};
+  var PALETTE=['#2F6A6E','#864A66','#BC6A1E','#4c78ff','#0f9d58','#d2592e','#7c3aed','#0891b2','#be185d','#475467'];
+  var EMOJIS=['\uD83D\uDCCC','\uD83D\uDCCA','\uD83D\uDCC8','\u2708\uFE0F','\uD83C\uDFAC','\uD83E\uDD16','\u2699\uFE0F','\uD83E\uDDED','\uD83D\uDCDA','\uD83C\uDFAF','\uD83C\uDFDB\uFE0F','\uD83D\uDDD3\uFE0F','\uD83D\uDCDD','\uD83D\uDD0D','\uD83D\uDE80','\uD83D\uDCAC','\uD83E\uDD1D','\uD83E\uDDEA','\uD83D\uDEE0\uFE0F','\uD83C\uDFA8','\uD83D\uDCC4','\uD83D\uDDC2\uFE0F','\uD83D\uDD14','\uD83D\uDCA1','\u2705','\uD83E\uDDE9','\uD83C\uDF10','\uD83C\uDFC6'];
+  var ICONRULES=[
+    [/travel|trip|flight|wns/,'\u2708\uFE0F'],
+    [/video|film|recording|youtube/,'\uD83C\uDFAC'],
+    [/governance|council|board/,'\uD83C\uDFDB\uFE0F'],
+    [/automat/,'\u2699\uFE0F'],
+    [/\bai\b|agent|bot|gpt|llm|copilot/,'\uD83E\uDD16'],
+    [/onboard/,'\uD83E\uDDED'],
+    [/tutor|course|curricul|lesson|learning|enablement|academy|sana/,'\uD83D\uDCDA'],
+    [/dashboard|report|metric|kpi|analytic|\bdata\b|roadmap/,'\uD83D\uDCCA'],
+    [/design|\bux\b|\bui\b|figma/,'\uD83C\uDFA8'],
+    [/sop|guide|manual|template|policy|\bdoc/,'\uD83D\uDCC4'],
+    [/calibrat|quality|\bqa\b/,'\uD83C\uDFAF'],
+    [/meeting|sync|cadence|1:1/,'\uD83D\uDDD3\uFE0F'],
+    [/content|copy|writing|article/,'\uD83D\uDCDD'],
+    [/review|audit|assess/,'\uD83D\uDD0D'],
+    [/launch|rollout|release/,'\uD83D\uDE80'],
+    [/slack|channel|message|chat/,'\uD83D\uDCAC'],
+    [/customer|\bcx\b|client|partner|stakeholder/,'\uD83E\uDD1D'],
+    [/test|pilot|experiment/,'\uD83E\uDDEA'],
+    [/build|tool|infra|integration|\bapi\b/,'\uD83D\uDEE0\uFE0F'],
+    [/growth|adoption|engagement|backlog/,'\uD83D\uDCC8']
+  ];
+  function pickIcon(name){ var n=(name||'').toLowerCase(); for(var i=0;i<ICONRULES.length;i++){ if(ICONRULES[i][0].test(n)) return ICONRULES[i][1]; } return '\uD83D\uDCCC'; }
+  function uid(){ return 'id'+Math.random().toString(36).slice(2,9); }
+  function initials(name){ var p=(name||'').trim().split(/\s+/).filter(Boolean); if(!p.length) return '?'; if(p.length===1) return p[0].slice(0,2).toUpperCase(); return (p[0][0]+p[p.length-1][0]).toUpperCase(); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function priorityRank(name){ var n=(name||'').toLowerCase(); if(n.indexOf('primary')>=0) return 0; if(n.indexOf('secondary')>=0) return 1; return 2; }
+
+  var BAKED = {
+  "people": [
+    {
+      "id": "unassigned",
+      "name": "Unassigned Projects",
+      "special": true,
+      "color": "#98a2b3",
+      "photo": null
+    },
+    {
+      "id": "ideq6pie3",
+      "name": "Matthew",
+      "color": "#2F6A6E",
+      "photo": null
+    },
+    {
+      "id": "idvmj890i",
+      "name": "Dacia",
+      "color": "#864A66",
+      "photo": null
+    },
+    {
+      "id": "idc8idhdg",
+      "name": "Shuren",
+      "color": "#BC6A1E",
+      "photo": null
+    },
+    {
+      "id": "id4k3repu",
+      "name": "Miriam",
+      "color": "#4c78ff",
+      "photo": null
+    },
+    {
+      "id": "idoz22va7",
+      "name": "Darius",
+      "color": "#0f9d58",
+      "photo": null
+    },
+    {
+      "id": "idoely320",
+      "name": "New HC",
+      "color": "#d2592e",
+      "photo": null
+    }
+  ],
+  "projects": [
+    {
+      "id": "idoqt16qg",
+      "name": "Sana Tutors",
+      "icon": "📚",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    },
+    {
+      "id": "idzuaeqo4",
+      "name": "Calibrations",
+      "icon": "🎯",
+      "status": "At risk",
+      "ownerId": "id4k3repu"
+    },
+    {
+      "id": "idk7wm5gd",
+      "name": "AI-Native Slack Agent",
+      "icon": "🤖",
+      "status": "On track",
+      "ownerId": "ideq6pie3"
+    },
+    {
+      "id": "idqkcfyhu",
+      "name": "Maintenance Automation",
+      "icon": "⚙️",
+      "status": "On track",
+      "ownerId": "id4k3repu"
+    },
+    {
+      "id": "idop296o6",
+      "name": "Sana Governance",
+      "icon": "🏛️",
+      "status": "On track",
+      "ownerId": "idvmj890i"
+    },
+    {
+      "id": "ideeegmkd",
+      "name": "Design Calibration",
+      "icon": "🎨",
+      "status": "At risk",
+      "ownerId": "idoely320"
+    },
+    {
+      "id": "idj7rbsp9",
+      "name": "Implementation Primary",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "ideq6pie3"
+    },
+    {
+      "id": "idkm8ynsx",
+      "name": "Implementation Secondary",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "idc8idhdg"
+    },
+    {
+      "id": "idjo3ncxz",
+      "name": "WNS Travel Primary",
+      "icon": "✈️",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    },
+    {
+      "id": "id4k97rbp",
+      "name": "CX Primary",
+      "icon": "🤝",
+      "status": "On track",
+      "ownerId": "idc8idhdg"
+    },
+    {
+      "id": "id6l45btg",
+      "name": "CX Secondary",
+      "icon": "🤝",
+      "status": "On track",
+      "ownerId": "idoely320"
+    },
+    {
+      "id": "idibgftwy",
+      "name": "BPO Alignment",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "ideq6pie3"
+    },
+    {
+      "id": "idcjca4ot",
+      "name": "RocketLane",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "idc8idhdg"
+    },
+    {
+      "id": "ide57c10g",
+      "name": "Enablement Videos Primary",
+      "icon": "🎬",
+      "status": "On track",
+      "ownerId": "ideq6pie3"
+    },
+    {
+      "id": "idf4huzbj",
+      "name": "Enablement Videos Secondary",
+      "icon": "🎬",
+      "status": "On track",
+      "ownerId": "idvmj890i"
+    },
+    {
+      "id": "id51wpius",
+      "name": "QA & Metrics",
+      "icon": "📊",
+      "status": "On track",
+      "ownerId": "idvmj890i"
+    },
+    {
+      "id": "idvk2ggd0",
+      "name": "Rubrics",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "id4k3repu"
+    },
+    {
+      "id": "idnjc2k2l",
+      "name": "Integrations(CX) (Primary)",
+      "icon": "🤝",
+      "status": "On track",
+      "ownerId": "id4k3repu"
+    },
+    {
+      "id": "idp3nwkuh",
+      "name": "Sana Governance",
+      "icon": "🏛️",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    },
+    {
+      "id": "idjnzg0vr",
+      "name": "Integrations Rebuild",
+      "icon": "🛠️",
+      "status": "On track",
+      "ownerId": "unassigned"
+    },
+    {
+      "id": "iddhownc0",
+      "name": "Implementation Methodology Rebuild",
+      "icon": "🛠️",
+      "status": "On track",
+      "ownerId": "unassigned"
+    },
+    {
+      "id": "idpdxvt3n",
+      "name": "Beta Drop (Primary)",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "ideq6pie3"
+    },
+    {
+      "id": "idpr0crjl",
+      "name": "Beta Drop (Secondary)",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "idvmj890i"
+    },
+    {
+      "id": "idagk0oie",
+      "name": "Project Assignment",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    },
+    {
+      "id": "ido68f8ly",
+      "name": "Mentorship",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    },
+    {
+      "id": "idjggltdl",
+      "name": "Mentorship",
+      "icon": "📌",
+      "status": "On track",
+      "ownerId": "id4k3repu"
+    },
+    {
+      "id": "idu4ac5lx",
+      "name": "Learning Council",
+      "icon": "🏛️",
+      "status": "On track",
+      "ownerId": "idoz22va7"
+    }
+  ]
+};
+
+  function seed(){ return JSON.parse(JSON.stringify(BAKED)); }
+
+  function load(){ try{ var raw=localStorage.getItem(KEY); if(raw){ var s=JSON.parse(raw); if(s&&s.people&&s.projects) return s; } }catch(e){} return null; }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  var state = load() || seed();
+
+  var board=document.getElementById('board');
+  function projectsFor(id){ return state.projects.filter(function(p){return p.ownerId===id;}); }
+  function sortedFor(id){
+    return projectsFor(id).map(function(p,i){return {p:p,i:i};})
+      .sort(function(a,b){ var r=priorityRank(a.p.name)-priorityRank(b.p.name); return r!==0?r:a.i-b.i; })
+      .map(function(o){return o.p;});
+  }
+  function person(id){ return state.people.filter(function(p){return p.id===id;})[0]; }
+
+  function cardHtml(pr){
+    var pri = priorityRank(pr.name)<2 ? ' priority':'';
+    return '<div class="card'+pri+'" draggable="true" data-id="'+pr.id+'">'
+      +'<span class="hd">\u283F</span>'
+      +'<button class="x" data-act="rmproj" data-id="'+pr.id+'" title="Remove project">\u00d7</button>'
+      +'<div class="row">'
+        +'<button class="ic" data-act="icon" data-id="'+pr.id+'" title="Change icon">'+pr.icon+'</button>'
+        +'<span class="pn" data-act="rename" data-id="'+pr.id+'" title="Click to edit name">'+esc(pr.name)+'</span>'
+      +'</div>'
+      +'<button class="st '+(STCLASS[pr.status]||'ok')+'" data-act="status" data-id="'+pr.id+'" title="Click to change status">'+esc(pr.status)+'</button>'
+    +'</div>';
+  }
+
+  function render(){
+    var pool=state.people.filter(function(p){return p.special;})[0];
+    var team=state.people.filter(function(p){return !p.special;});
+    var poolHtml='<div class="pool" data-col="'+pool.id+'">'
+      +'<div class="phead"><span class="ptitle">'+esc(pool.name)+'</span><span class="cnt">'+projectsFor(pool.id).length+'</span></div>'
+      +'<div class="cards">'+sortedFor(pool.id).map(cardHtml).join('')+'</div>'
+      +'<button class="add" data-act="addproj" data-col="'+pool.id+'">+ Add project</button>'
+    +'</div>';
+    var lanes=team.map(function(pe){
+      var list=sortedFor(pe.id);
+      var avStyle='background:'+(pe.color||'#98a2b3'); var avText=initials(pe.name);
+      if(pe.photo){ avStyle="background-image:url('"+esc(pe.photo)+"');"; avText=''; }
+      return '<div class="lane" data-col="'+pe.id+'">'
+        +'<div class="lane-id">'
+          +'<span class="av" style="'+avStyle+'">'+avText+'</span>'
+          +'<div class="lane-meta"><span class="nm" title="'+esc(pe.name)+'">'+esc(pe.name)+'</span><span class="cnt">'+list.length+' project'+(list.length===1?'':'s')+'</span></div>'
+          +'<button class="pmenu" data-act="personmenu" data-id="'+pe.id+'" title="Person options">\u22ef</button>'
+        +'</div>'
+        +'<div class="lane-body">'+list.map(cardHtml).join('')
+          +'<button class="addtile" data-act="addproj" data-col="'+pe.id+'">+ Add</button>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+    board.innerHTML='<div class="layout">'+poolHtml+'<div class="lanes">'+lanes+'</div></div>';
+  }
+
+  /* popovers */
+  var openPop=null;
+  function closePop(){ if(openPop){ openPop.remove(); openPop=null; document.removeEventListener('mousedown',outside,true); } }
+  function outside(e){ if(openPop && !openPop.contains(e.target)) closePop(); }
+  function popover(anchor, innerHtml){
+    closePop();
+    var p=document.createElement('div'); p.className='pop'; p.innerHTML=innerHtml; document.body.appendChild(p);
+    var r=anchor.getBoundingClientRect(); var top=r.bottom+window.scrollY+6, left=r.left+window.scrollX;
+    if(left+p.offsetWidth>window.scrollX+document.documentElement.clientWidth-10){ left=window.scrollX+document.documentElement.clientWidth-p.offsetWidth-10; }
+    p.style.top=top+'px'; p.style.left=left+'px'; openPop=p;
+    setTimeout(function(){ document.addEventListener('mousedown',outside,true); },0); return p;
+  }
+  function iconPicker(anchor, projId){
+    var grid='<div class="emoji-grid">'+EMOJIS.map(function(e){return '<button data-emoji="'+e+'">'+e+'</button>';}).join('')+'</div>';
+    popover(anchor, grid).addEventListener('click',function(e){
+      var b=e.target.closest('[data-emoji]'); if(!b) return;
+      var pr=state.projects.filter(function(x){return x.id===projId;})[0];
+      if(pr){ pr.icon=b.getAttribute('data-emoji'); save(); render(); } closePop();
+    });
+  }
+  function personMenu(anchor, pid){
+    popover(anchor,'<button data-m="rename">\u270F\uFE0F Rename</button><button data-m="photo">\uD83D\uDDBC\uFE0F Set photo URL</button><button class="danger" data-m="remove">\uD83D\uDDD1\uFE0F Remove person</button>')
+    .addEventListener('click',function(e){
+      var b=e.target.closest('[data-m]'); if(!b) return; var m=b.getAttribute('data-m'); closePop(); var pe=person(pid); if(!pe) return;
+      if(m==='rename'){ var n=prompt('Rename person:',pe.name); if(n&&n.trim()){ pe.name=n.trim(); save(); render(); } }
+      else if(m==='photo'){ var u=prompt('Paste an image URL for '+pe.name+' (blank to use initials):', pe.photo||''); pe.photo=(u&&u.trim())?u.trim():null; save(); render(); }
+      else if(m==='remove'){ if(confirm('Remove '+pe.name+'? Their projects move to Projects.')){ state.projects.forEach(function(pr){ if(pr.ownerId===pid) pr.ownerId='unassigned'; }); state.people=state.people.filter(function(x){return x.id!==pid;}); save(); render(); } }
+    });
+  }
+  function dataMenu(anchor){
+    popover(anchor,'<button data-m="export">\u2B07\uFE0F Export (download backup)</button><button data-m="import">\u2B06\uFE0F Import (restore backup)</button><button class="danger" data-m="reset">\u21BA Reset board</button>')
+    .addEventListener('click',function(e){
+      var b=e.target.closest('[data-m]'); if(!b) return; var m=b.getAttribute('data-m'); closePop();
+      if(m==='export'){ exportData(); }
+      else if(m==='import'){ document.getElementById('importer').click(); }
+      else if(m==='reset'){ if(confirm('Reset to the starting example? This clears your current board.')){ state=seed(); save(); render(); } }
+    });
+  }
+  function exportData(){ var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='team-project-board.json'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },100); }
+  document.getElementById('importer').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(){ try{ var s=JSON.parse(rd.result); if(s&&s.people&&s.projects){ state=s; save(); render(); } else alert('That file does not look like a board backup.'); }catch(err){ alert('Could not read that file.'); } }; rd.readAsText(f); e.target.value=''; });
+
+  /* inline name editing */
+  function startInlineEdit(span, id){
+    if(span.isContentEditable) return;
+    var card=span.closest('.card'); if(card) card.setAttribute('draggable','false');
+    span.contentEditable='true'; span.classList.add('editing');
+    var range=document.createRange(); range.selectNodeContents(span); var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); span.focus();
+    function finish(){ span.removeEventListener('blur',finish); span.removeEventListener('keydown',key);
+      var pr=state.projects.filter(function(p){return p.id===id;})[0]; var v=span.textContent.replace(/\s+/g,' ').trim();
+      if(pr){ if(v) pr.name=v; pr.icon=pr.icon; } save(); render(); }
+    function key(e){ if(e.key==='Enter'){ e.preventDefault(); span.blur(); } else if(e.key==='Escape'){ var pr=state.projects.filter(function(p){return p.id===id;})[0]; span.textContent=pr?pr.name:''; span.blur(); } }
+    span.addEventListener('blur',finish); span.addEventListener('keydown',key);
+  }
+
+  /* actions */
+  function addProject(ownerId){ var name=prompt('Project name:'); if(!name||!name.trim()) return; state.projects.push({id:uid(),name:name.trim(),icon:pickIcon(name),status:'On track',ownerId:ownerId||'unassigned'}); save(); render(); }
+  function addPerson(){ var name=prompt('Add a person (name):'); if(!name||!name.trim()) return; var color=PALETTE[(state.people.length-1)%PALETTE.length]; state.people.push({id:uid(),name:name.trim(),color:color,photo:null}); save(); render(); }
+
+  document.querySelector('.tools').addEventListener('click',function(e){ var b=e.target.closest('[data-act]'); if(!b) return; var act=b.getAttribute('data-act');
+    if(act==='addproj-top') addProject('unassigned'); else if(act==='addperson') addPerson(); else if(act==='datamenu') dataMenu(b); });
+
+  board.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]'); if(!b) return; var act=b.getAttribute('data-act'); var id=b.getAttribute('data-id');
+    if(act==='addproj'){ addProject(b.getAttribute('data-col')); }
+    else if(act==='rmproj'){ state.projects=state.projects.filter(function(p){return p.id!==id;}); save(); render(); }
+    else if(act==='status'){ var pr=state.projects.filter(function(p){return p.id===id;})[0]; if(pr){ pr.status=STATUSES[(STATUSES.indexOf(pr.status)+1)%STATUSES.length]; save(); render(); } }
+    else if(act==='icon'){ iconPicker(b,id); }
+    else if(act==='rename'){ startInlineEdit(b,id); }
+    else if(act==='personmenu'){ personMenu(b,id); }
+  });
+
+  /* drag & drop */
+  var dragId=null;
+  board.addEventListener('dragstart',function(e){ var card=e.target.closest('.card'); if(!card) return; dragId=card.getAttribute('data-id'); card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain',dragId); }catch(x){} });
+  board.addEventListener('dragend',function(e){ var card=e.target.closest('.card'); if(card) card.classList.remove('dragging'); Array.prototype.forEach.call(board.querySelectorAll('.over'),function(c){c.classList.remove('over');}); dragId=null; });
+  board.addEventListener('dragover',function(e){ var z=e.target.closest('[data-col]'); if(!z) return; e.preventDefault(); e.dataTransfer.dropEffect='move'; z.classList.add('over'); });
+  board.addEventListener('dragleave',function(e){ var z=e.target.closest('[data-col]'); if(z && !z.contains(e.relatedTarget)) z.classList.remove('over'); });
+  board.addEventListener('drop',function(e){ var z=e.target.closest('[data-col]'); if(!z) return; e.preventDefault(); var newOwner=z.getAttribute('data-col'); var id=dragId; try{ id=id||e.dataTransfer.getData('text/plain'); }catch(x){} var pr=state.projects.filter(function(p){return p.id===id;})[0]; if(pr && pr.ownerId!==newOwner){ pr.ownerId=newOwner; save(); } render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
