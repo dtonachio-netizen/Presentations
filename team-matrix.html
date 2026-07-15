@@ -344,6 +344,9 @@ function colDragOver(e,i){e.preventDefault();e.currentTarget.classList.add("drag
 function colDrop(e,i){e.preventDefault();if(DRAGCOL===null||DRAGCOL===i){dragEndAll();return;}
   const a=S.people;const[m]=a.splice(DRAGCOL,1);a.splice(i,0,m);DRAGCOL=null;save();render();}
 
+function granoHTML(g){return `<div class="grano-box"><div class="glab"><span class="dot"></span>Verbatim from Granola · unedited<span class="del" onclick="delGrano('${g.id}')">delete</span></div>
+  <textarea oninput="editGrano('${g.id}',this.value)">${esc(g.raw)}</textarea>
+  <input class="gm" value="${esc(g.meeting+' · '+g.date)}" oninput="editGranoMeta('${g.id}',this.value)"></div>`;}
 function noteHTML(nt,label){return `<div class="note"><div class="nmeta"><span class="pill ${nt.source}">${SRC_LABEL[nt.source]}</span><span class="pill proj">${esc(label)}</span><span class="ndate">${esc(nt.date||"")}</span></div>
   <div class="ntext" id="nt-${nt.id}">${esc(nt.text)}</div>
   <div class="nact"><button class="btn sm ghost" onclick="startEditNote('${nt.id}')">Edit</button><button class="btn sm ghost danger" onclick="delNote('${nt.id}')">Delete</button></div></div>`;}
