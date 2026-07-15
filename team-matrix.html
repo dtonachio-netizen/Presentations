@@ -428,24 +428,47 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeD
 
 function openPerson(pid){LAST={t:"person",a:pid};const p=pers(pid);
   const g=S.granola.filter(x=>x.person===pid).sort(bydate),arc=S.notes.filter(x=>x.person===pid&&x.project==="arc").sort(bydate),pn=S.notes.filter(x=>x.person===pid&&x.project!=="arc").sort(bydate);
+  const pjn=id=>(proj(id)||{name:id}).name;
   let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes yet.</p>`);
-  h+=`<div class="seclab">Personal arc &amp; 1:1</div>`+(arc.length?arc.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
-  h+=`<div class="seclab">Project involvement</div>`+(pn.length?pn.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Personal arc &amp; 1:1</div>`+(arc.length?arc.map(x=>noteHTML(x,pjn(x.project))).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Project involvement</div>`+(pn.length?pn.map(x=>noteHTML(x,pjn(x.project))).join(""):`<p class="empty-note">Nothing yet.</p>`);
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"person",a:pid});
   h+=assetsBlock("person",pid);
+  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="delPerson('${pid}')">Remove this person</button>`;
   const act=S.projects.filter(pr=>!pr.isArc&&(S.grid[pr.id]||{})[pid]).map(pr=>pr.name).join(", ")||"none active";
   openDrawer("Person","View all · "+p.name,p.role+" · projects: "+act,h);}
+function delPerson(pid){const p=pers(pid);if(!p)return;
+  openModal(`<h3>Remove "${esc(p.name)}"?</h3><p style="font-size:12.5px;margin:0 0 14px">Removes this person's column and their notes. Can't be undone. Projects and other people are unaffected.</p>
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Keep them</button><button class="btn danger" onclick="doDelPerson('${pid}')">Remove</button></div>`);}
+function doDelPerson(pid){
+  S.people=S.people.filter(p=>p.id!==pid);
+  Object.keys(S.grid).forEach(prid=>{if(S.grid[prid])delete S.grid[prid][pid];});
+  Object.keys(S.cellSummary).forEach(k=>{if(k.endsWith("-"+pid))delete S.cellSummary[k];});
+  S.notes=S.notes.filter(x=>x.person!==pid);S.granola=S.granola.filter(x=>x.person!==pid);
+  S.assets=(S.assets||[]).filter(a=>!(a.scope==="person"&&a.key===pid));
+  save();render();closeModal();closeDrawer();}
 function openProject(prid){LAST={t:"project",a:prid};const pr=proj(prid);
   if(pr.isArc){const arc=S.notes.filter(x=>x.project==="arc").sort(bydate);
     let h=`<div class="seclab">Growth &amp; 1:1 themes — whole team</div>`+(arc.length?arc.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
     h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});openDrawer("Thread","Personal arc","Development threads across the team",h);return;}
   const g=S.granola.filter(x=>x.project===prid).sort(bydate),pn=S.notes.filter(x=>x.project===prid).sort(bydate);
+  const prn=id=>(pers(id)||{name:id}).name;
   const cast=S.people.filter(p=>(S.grid[prid]||{})[p.id]).map(p=>p.name+" ("+S.grid[prid][p.id]+")").join(", ");
   let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes tagged here.</p>`);
-  h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,prn(x.person))).join(""):`<p class="empty-note">Nothing yet.</p>`);
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});
   h+=assetsBlock("project",prid);
+  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="delMatrixProject('${prid}')">Delete this project</button>`;
   openDrawer("Thread",pr.name,"Cast: "+(cast||"unassigned"),h);}
+function delMatrixProject(prid){const pr=proj(prid);if(!pr||pr.isArc)return;
+  openModal(`<h3>Delete "${esc(pr.name)}"?</h3><p style="font-size:12.5px;margin:0 0 14px">Removes this project row and its notes. Can't be undone. People and other projects are unaffected.</p>
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Keep it</button><button class="btn danger" onclick="doDelMatrixProject('${prid}')">Delete</button></div>`);}
+function doDelMatrixProject(prid){
+  S.projects=S.projects.filter(p=>p.id!==prid);delete S.grid[prid];
+  Object.keys(S.cellSummary).forEach(k=>{if(k.indexOf(prid+"-")===0)delete S.cellSummary[k];});
+  S.notes=S.notes.filter(x=>x.project!==prid);S.granola=S.granola.filter(x=>x.project!==prid);
+  S.assets=(S.assets||[]).filter(a=>!(a.scope==="project"&&a.key===prid));
+  save();render();closeModal();closeDrawer();}
 function openCell(prid,pid){LAST={t:"cell",a:prid,b:pid};const pr=proj(prid),p=pers(pid),key=prid+"-"+pid;
   const g=S.granola.filter(x=>x.project===prid&&x.person===pid).sort(bydate),cn=S.notes.filter(x=>x.project===prid&&x.person===pid).sort(bydate);
   const role=(S.grid[prid]||{})[pid]||"";let h="";
