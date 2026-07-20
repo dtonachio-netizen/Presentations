@@ -128,6 +128,8 @@
   .dhead{position:sticky;top:0;background:var(--panel);padding:20px 22px 14px;border-bottom:1px solid var(--line);z-index:2}
   .dkind{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
   .dtitle{font-size:22px;font-weight:600;margin:4px 0 0}
+  .pen{cursor:pointer;font-size:15px;color:var(--muted);vertical-align:middle;margin-left:8px;user-select:none}
+  .pen:hover{color:var(--orange)}
   .dmeta{color:var(--muted);font-size:12.5px;margin-top:3px}
   .close{position:absolute;top:16px;right:16px;border:none;background:var(--panel2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted);line-height:1}
   .close:hover{background:var(--orange);color:#000}
@@ -344,9 +346,6 @@ function colDragOver(e,i){e.preventDefault();e.currentTarget.classList.add("drag
 function colDrop(e,i){e.preventDefault();if(DRAGCOL===null||DRAGCOL===i){dragEndAll();return;}
   const a=S.people;const[m]=a.splice(DRAGCOL,1);a.splice(i,0,m);DRAGCOL=null;save();render();}
 
-function granoHTML(g){return `<div class="grano-box"><div class="glab"><span class="dot"></span>Verbatim from Granola · unedited<span class="del" onclick="delGrano('${g.id}')">delete</span></div>
-  <textarea oninput="editGrano('${g.id}',this.value)">${esc(g.raw)}</textarea>
-  <input class="gm" value="${esc(g.meeting+' · '+g.date)}" oninput="editGranoMeta('${g.id}',this.value)"></div>`;}
 function noteHTML(nt,label){return `<div class="note"><div class="nmeta"><span class="pill ${nt.source}">${SRC_LABEL[nt.source]}</span><span class="pill proj">${esc(label)}</span><span class="ndate">${esc(nt.date||"")}</span></div>
   <div class="ntext" id="nt-${nt.id}">${esc(nt.text)}</div>
   <div class="nact"><button class="btn sm ghost" onclick="startEditNote('${nt.id}')">Edit</button><button class="btn sm ghost danger" onclick="delNote('${nt.id}')">Delete</button></div></div>`;}
@@ -359,6 +358,22 @@ function delNote(id){S.notes=S.notes.filter(x=>x.id!==id);save();render();reopen
 function editGrano(id,v){S.granola.find(x=>x.id===id).raw=v;save();}
 function editGranoMeta(id,v){const g=S.granola.find(x=>x.id===id),p=v.split(" · ");g.meeting=p[0]||"";g.date=p.slice(1).join(" · ")||"";save();}
 function delGrano(id){S.granola=S.granola.filter(x=>x.id!==id);save();reopenLast();}
+function granoHTML(g){return `<div class="grano-box">
+  <div class="glab"><span class="dot"></span>Verbatim from Granola · unedited<span class="del" onclick="delGrano('${g.id}')">Delete</span></div>
+  <textarea oninput="editGrano('${g.id}',this.value)">${esc(g.raw)}</textarea>
+  <input class="gm" value="${esc((g.meeting||"")+(g.date?" · "+g.date:""))}" oninput="editGranoMeta('${g.id}',this.value)" placeholder="Meeting · date"></div>`;}
+
+function setTitleEditable(kind,id,name){const t=document.getElementById("dtitle");if(!t)return;
+  t.innerHTML=esc(name)+` <span class="pen" title="Rename project" onclick="startRename('${kind}','${id}')">✎</span>`;}
+function startRename(kind,id){const cur=kind==="mine"?(S.myProjects.find(x=>x.id===id)||{}).name:(proj(id)||{}).name;
+  const t=document.getElementById("dtitle");if(!t)return;
+  t.innerHTML=`<input id="rn-title" value="${esc(cur||"")}" style="font:inherit;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:2px 8px;max-width:86%"> <button class="btn sm prime" onclick="commitRename('${kind}','${id}')">Save</button>`;
+  const i=document.getElementById("rn-title");i.focus();i.select();
+  i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename(kind,id);}if(e.key==="Escape"){reopenLast();}});}
+function commitRename(kind,id){const el=document.getElementById("rn-title");if(!el)return;const v=el.value.trim();if(!v){reopenLast();return;}
+  if(kind==="mine"){const m=S.myProjects.find(x=>x.id===id);if(m)m.name=v;save();renderMine();}
+  else{const pr=proj(id);if(pr)pr.name=v;save();render();}
+  reopenLast();flash("renamed ✓");}
 
 function addNoteForm(ctx){
   const src=Object.keys(SRC_LABEL).map(k=>`<option value="${k}">${SRC_LABEL[k]}</option>`).join("");
@@ -428,47 +443,24 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeD
 
 function openPerson(pid){LAST={t:"person",a:pid};const p=pers(pid);
   const g=S.granola.filter(x=>x.person===pid).sort(bydate),arc=S.notes.filter(x=>x.person===pid&&x.project==="arc").sort(bydate),pn=S.notes.filter(x=>x.person===pid&&x.project!=="arc").sort(bydate);
-  const pjn=id=>(proj(id)||{name:id}).name;
   let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes yet.</p>`);
-  h+=`<div class="seclab">Personal arc &amp; 1:1</div>`+(arc.length?arc.map(x=>noteHTML(x,pjn(x.project))).join(""):`<p class="empty-note">Nothing yet.</p>`);
-  h+=`<div class="seclab">Project involvement</div>`+(pn.length?pn.map(x=>noteHTML(x,pjn(x.project))).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Personal arc &amp; 1:1</div>`+(arc.length?arc.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Project involvement</div>`+(pn.length?pn.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"person",a:pid});
   h+=assetsBlock("person",pid);
-  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="delPerson('${pid}')">Remove this person</button>`;
   const act=S.projects.filter(pr=>!pr.isArc&&(S.grid[pr.id]||{})[pid]).map(pr=>pr.name).join(", ")||"none active";
   openDrawer("Person","View all · "+p.name,p.role+" · projects: "+act,h);}
-function delPerson(pid){const p=pers(pid);if(!p)return;
-  openModal(`<h3>Remove "${esc(p.name)}"?</h3><p style="font-size:12.5px;margin:0 0 14px">Removes this person's column and their notes. Can't be undone. Projects and other people are unaffected.</p>
-  <div class="mact"><button class="btn ghost" onclick="closeModal()">Keep them</button><button class="btn danger" onclick="doDelPerson('${pid}')">Remove</button></div>`);}
-function doDelPerson(pid){
-  S.people=S.people.filter(p=>p.id!==pid);
-  Object.keys(S.grid).forEach(prid=>{if(S.grid[prid])delete S.grid[prid][pid];});
-  Object.keys(S.cellSummary).forEach(k=>{if(k.endsWith("-"+pid))delete S.cellSummary[k];});
-  S.notes=S.notes.filter(x=>x.person!==pid);S.granola=S.granola.filter(x=>x.person!==pid);
-  S.assets=(S.assets||[]).filter(a=>!(a.scope==="person"&&a.key===pid));
-  save();render();closeModal();closeDrawer();}
 function openProject(prid){LAST={t:"project",a:prid};const pr=proj(prid);
   if(pr.isArc){const arc=S.notes.filter(x=>x.project==="arc").sort(bydate);
     let h=`<div class="seclab">Growth &amp; 1:1 themes — whole team</div>`+(arc.length?arc.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
-    h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});openDrawer("Thread","Personal arc","Development threads across the team",h);return;}
+    h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});openDrawer("Thread",pr.name,"Development threads across the team",h);setTitleEditable("project",prid,pr.name);return;}
   const g=S.granola.filter(x=>x.project===prid).sort(bydate),pn=S.notes.filter(x=>x.project===prid).sort(bydate);
-  const prn=id=>(pers(id)||{name:id}).name;
   const cast=S.people.filter(p=>(S.grid[prid]||{})[p.id]).map(p=>p.name+" ("+S.grid[prid][p.id]+")").join(", ");
   let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes tagged here.</p>`);
-  h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,prn(x.person))).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});
   h+=assetsBlock("project",prid);
-  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="delMatrixProject('${prid}')">Delete this project</button>`;
-  openDrawer("Thread",pr.name,"Cast: "+(cast||"unassigned"),h);}
-function delMatrixProject(prid){const pr=proj(prid);if(!pr||pr.isArc)return;
-  openModal(`<h3>Delete "${esc(pr.name)}"?</h3><p style="font-size:12.5px;margin:0 0 14px">Removes this project row and its notes. Can't be undone. People and other projects are unaffected.</p>
-  <div class="mact"><button class="btn ghost" onclick="closeModal()">Keep it</button><button class="btn danger" onclick="doDelMatrixProject('${prid}')">Delete</button></div>`);}
-function doDelMatrixProject(prid){
-  S.projects=S.projects.filter(p=>p.id!==prid);delete S.grid[prid];
-  Object.keys(S.cellSummary).forEach(k=>{if(k.indexOf(prid+"-")===0)delete S.cellSummary[k];});
-  S.notes=S.notes.filter(x=>x.project!==prid);S.granola=S.granola.filter(x=>x.project!==prid);
-  S.assets=(S.assets||[]).filter(a=>!(a.scope==="project"&&a.key===prid));
-  save();render();closeModal();closeDrawer();}
+  openDrawer("Thread",pr.name,"Cast: "+(cast||"unassigned"),h);setTitleEditable("project",prid,pr.name);}
 function openCell(prid,pid){LAST={t:"cell",a:prid,b:pid};const pr=proj(prid),p=pers(pid),key=prid+"-"+pid;
   const g=S.granola.filter(x=>x.project===prid&&x.person===pid).sort(bydate),cn=S.notes.filter(x=>x.project===prid&&x.person===pid).sort(bydate);
   const role=(S.grid[prid]||{})[pid]||"";let h="";
@@ -564,7 +556,7 @@ function openMine(id){LAST={t:"mine",a:id};const m=S.myProjects.find(x=>x.id===i
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"mine",a:id});
   h+=assetsBlock("mine",id);
   h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="mineDelProject('${id}')">Delete this project</button>`;
-  openDrawer("My project",m.name,"Self-assigned · click cells in the row to edit",h);}
+  openDrawer("My project",m.name,"Self-assigned · click cells in the row to edit",h);setTitleEditable("mine",id,m.name);}
 function mineDelProject(id){S.myProjects=S.myProjects.filter(x=>x.id!==id);save();renderMine();closeDrawer();}
 
 function showQuickNote(){openModal(`<h3>Quick note</h3>
