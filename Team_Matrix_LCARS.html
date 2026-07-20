@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Matrix — Learning Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --orange:#FF7028; --mauve:#B9A3E3; --gold:#FFC15E; --salmon:#FF9E7A;
+    --blue:#8FB7E8; --ice:#D3DCEF; --dim:#5A5560; --black:#000;
+    --lav:#C7C0EC; --cyan:#8FD3E8; --tan:#E8C79A; --frame:#0A0910;
+    --panel:#15131A; --panel2:#201D28; --line:#2E2A38; --line2:#3C3748;
+    --ink:#ECE9F2; --muted:#9A94A6; --faint:#6E6878;
+    --grano:#08070C; --grano-ink:#EDE7DA;
+    --f:"Inter",system-ui,sans-serif; --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#000;color:var(--ink);font-family:var(--f);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .screen{max-width:1160px;margin:0 auto;padding:18px 20px 60px}
+  .code{font-variant-numeric:tabular-nums}
+  .up{text-transform:uppercase;letter-spacing:.04em}
+
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .btn{font-family:var(--f);font-size:12px;font-weight:600;border:none;background:var(--panel2);color:var(--ice);
+    padding:8px 15px;border-radius:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;transition:background .12s,color .12s}
+  .btn:hover{background:var(--orange);color:#000}
+  .btn.sm{padding:5px 11px;font-size:11px;border-radius:11px}
+  .btn.prime{background:var(--orange);color:#000}
+  .btn.prime:hover{background:var(--gold)}
+  .btn.ghost{background:transparent;color:var(--muted)}
+  .btn.ghost:hover{background:var(--panel2);color:var(--ice)}
+  .btn.danger:hover{background:var(--salmon);color:#000}
+  .savenote{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-left:auto;text-transform:uppercase}
+  .banner{background:#2A2410;border:1px solid var(--gold);color:var(--gold);border-radius:12px;padding:9px 13px;font-size:12.5px;margin:0 0 12px}
+
+  .frame{display:grid;grid-template-columns:150px 1fr;gap:10px}
+  .rail{display:flex;flex-direction:column;gap:8px}
+  .main{display:flex;flex-direction:column;gap:10px}
+  .hdr{background:var(--orange);border-radius:14px;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:#000}
+  .hdr .ttl{font-weight:700;font-size:17px}
+  .hdr .rc{font-weight:600;font-size:14px;background:#000;color:var(--gold);padding:3px 11px;border-radius:11px}
+
+  table{width:100%;border-collapse:separate;border-spacing:6px;table-layout:fixed}
+  th,td{padding:0;vertical-align:stretch;text-align:left}
+  .band{color:#000;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;text-align:center;vertical-align:middle;padding:8px 6px}
+  .band small{display:block;font-weight:500;font-size:10px;opacity:.65;margin-top:2px;letter-spacing:.02em}
+  .band.people{background:var(--mauve);border-radius:12px 12px 0 0}
+  .band.projects{background:var(--gold);border-radius:0 0 12px 12px;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;letter-spacing:.12em}
+  .band.projects small{writing-mode:horizontal-tb;transform:rotate(180deg);margin:0 0 6px}
+  .phd{cursor:pointer}
+  .phd.dragover,.rlab.dragover{outline:2px dashed var(--gold);outline-offset:2px}
+  .phd.dragging,.rlab.dragging{opacity:.4}
+  .rlab .grip,.phd .grip{font-size:12px;color:rgba(0,0,0,.4);margin-right:5px;cursor:grab}
+  .phd{background:var(--mauve);color:#000;border-radius:12px;padding:9px 12px;cursor:pointer;transition:filter .12s;height:100%;min-height:58px;display:flex;flex-direction:column;justify-content:center}
+  .phd:hover{filter:brightness(1.08)}
+  .phd .nm{font-weight:600;font-size:16px;line-height:1;display:block}
+  .phd .rl{font-size:10.5px;opacity:.75;margin-top:3px;display:block}
+  .rlab{color:#000;border-radius:12px;padding:11px 12px;height:100%;cursor:pointer;transition:filter .12s}
+  .rlab:hover{filter:brightness(1.08)}
+  .rlab.thread{background:var(--gold)} .rlab.arc{background:var(--blue)}
+  .rlab .tn{font-weight:600;font-size:14px;line-height:1.1;display:block}
+  .rlab .ts{font-size:10px;opacity:.75;margin-top:4px;display:block}
+
+  .cell{border-radius:12px;padding:9px 11px;min-height:52px;font-size:11.5px;line-height:1.25;height:100%;cursor:pointer;transition:filter .12s}
+  .cell:hover{filter:brightness(1.12)}
+  .cell.lead{background:var(--orange);color:#000;font-weight:600}
+  .cell.contrib{background:var(--panel2);color:var(--ice);border:2px solid var(--mauve)}
+  .cell.arccell{background:var(--panel2);color:var(--blue);border:2px dashed #3B4A66}
+  .cell.empty{background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center}
+  .cell .flag{display:block;margin-top:5px;color:#000;background:var(--gold);font-size:9px;font-weight:700;border-radius:6px;padding:1px 6px;width:fit-content;letter-spacing:.02em}
+
+  .foot{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+  .fc{display:flex;align-items:center;gap:8px}
+  .fc .chip{width:40px;height:18px;border-radius:9px}
+  .fc .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .fc .chip.emptychip{border:1px dashed var(--line2)}
+
+  .mine{margin-top:40px;background:var(--frame);border:1px solid var(--line2);border-radius:28px;padding:18px 18px 20px}
+  .mine-hd{display:flex;gap:7px;align-items:stretch;margin-bottom:14px}
+  .mine-hd .elbow{background:var(--lav);border-radius:44px 0 0 16px;width:104px;color:#000;font-weight:700;display:flex;align-items:flex-end;padding:12px 14px;text-transform:uppercase;font-size:13px;letter-spacing:.05em}
+  .mine-hd .swoop{flex:1;background:var(--cyan);border-radius:16px 16px 16px 0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;color:#0A2731}
+  .mine-hd .swoop .t{font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+  .mine-hd .swoop .rc{font-weight:600;font-size:14px;background:#0A2731;color:var(--cyan);padding:3px 11px;border-radius:11px}
+  .colhead{display:grid;grid-template-columns:238px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:8px;padding:0 8px 0 26px;margin-bottom:8px}
+  .colhead span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+  .prow{display:grid;grid-template-columns:238px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:8px;margin-bottom:8px;align-items:stretch}
+  .prow.dragover{outline:2px dashed var(--cyan);outline-offset:3px;border-radius:16px}
+  .prow.dragging{opacity:.4}
+  .pname{border-radius:34px 6px 6px 34px;padding:10px 14px 10px 12px;color:#000;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:86px}
+  .pname .grip{cursor:grab;font-size:15px;line-height:1;color:rgba(0,0,0,.45);flex-shrink:0;user-select:none}
+  .pname .pidx{font-family:var(--mono);font-weight:700;font-size:18px;background:rgba(0,0,0,.18);border-radius:9px;padding:4px 8px;flex-shrink:0}
+  .pname .pn{font-weight:600;font-size:14.5px;line-height:1.15}
+  .pcol{background:#141018;border:1px solid var(--line);border-radius:9px;padding:10px 11px;min-height:86px;display:flex;flex-direction:column;gap:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chipx{display:inline-flex;align-items:center;gap:5px;background:#221C2C;border:1px solid var(--line2);color:var(--lav);font-size:11.5px;padding:3px 8px;border-radius:20px}
+  .chipx b{cursor:pointer;color:var(--faint);font-weight:400;font-size:12px}
+  .chipx b:hover{color:var(--salmon)}
+  .dline{display:flex;align-items:baseline;gap:7px;font-size:12px}
+  .dline .dd{font-family:var(--mono);font-size:10.5px;color:var(--cyan);white-space:nowrap}
+  .dline .dl{color:var(--ice);flex:1}
+  .dline .x,.aline .x{cursor:pointer;color:var(--faint);font-size:12px}
+  .dline .x:hover,.aline .x:hover{color:var(--salmon)}
+  .aline{display:flex;align-items:flex-start;gap:7px;font-size:12px}
+  .aline input[type=checkbox]{margin:2px 0 0;accent-color:var(--cyan)}
+  .aline .at{flex:1;color:var(--ice)}
+  .aline .at.done{text-decoration:line-through;color:var(--faint)}
+  .miniadd{display:flex;gap:5px;margin-top:auto;padding-top:4px}
+  .miniadd input{flex:1;min-width:0;font-family:var(--f);font-size:11.5px;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:5px 7px;color:var(--ink)}
+  .miniadd input.dt{flex:0 0 84px}
+  .miniadd button{background:var(--panel);border:1px solid var(--line2);color:var(--ice);border-radius:7px;padding:0 9px;font-size:14px;cursor:pointer;line-height:1}
+  .miniadd button:hover{background:var(--cyan);color:#0A2731}
+  .mine-add{margin-top:6px}
+
+  .asset{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:7px}
+  .asset a{color:var(--cyan);text-decoration:none;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .asset a:hover{text-decoration:underline}
+  .asset .x{cursor:pointer;color:var(--faint);font-size:12px}
+  .asset .x:hover{color:var(--salmon)}
+
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(500px,95vw);background:var(--panel);border-left:3px solid var(--orange);
+    transform:translateX(102%);transition:transform .24s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
+  .drawer.on{transform:translateX(0)}
+  .dhead{position:sticky;top:0;background:var(--panel);padding:20px 22px 14px;border-bottom:1px solid var(--line);z-index:2}
+  .dkind{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+  .dtitle{font-size:22px;font-weight:600;margin:4px 0 0}
+  .pen{cursor:pointer;font-size:15px;color:var(--muted);vertical-align:middle;margin-left:8px;user-select:none}
+  .pen:hover{color:var(--orange)}
+  .dmeta{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .close{position:absolute;top:16px;right:16px;border:none;background:var(--panel2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted);line-height:1}
+  .close:hover{background:var(--orange);color:#000}
+  .dbody{padding:16px 22px 60px}
+  .seclab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:22px 0 9px;display:flex;align-items:center;gap:9px}
+  .seclab:first-child{margin-top:2px}
+  .seclab::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:9px}
+  .note .nmeta{display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;border:1px solid var(--line2);color:var(--muted)}
+  .pill.slack{border-color:#7E63C9;color:#B9A3E3} .pill.email{border-color:#4E7BB5;color:#8FB7E8}
+  .pill.oneone{border-color:var(--orange);color:var(--orange)} .pill.project{border-color:var(--line2);color:var(--muted)}
+  .pill.manual{border-color:#5E8A47;color:#9BC47E} .pill.proj{border-color:var(--line2);color:var(--muted)}
+  .note .ntext{font-size:13px;line-height:1.5;color:var(--ink)}
+  .note .ndate{margin-left:auto;font-size:10px;color:var(--faint);font-family:var(--mono)}
+  .note .nact{display:flex;gap:6px;margin-top:9px}
+  .note textarea{width:100%;font-family:var(--f);font-size:13px;background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:7px;resize:vertical;min-height:54px}
+
+  .grano-box{background:var(--grano);border:1px solid #241E14;border-radius:11px;padding:12px 14px;margin-bottom:9px}
+  .grano-box .glab{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .grano-box .glab .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .grano-box .glab .del{margin-left:auto;color:var(--faint);cursor:pointer;font-size:10px;letter-spacing:.04em}
+  .grano-box .glab .del:hover{color:var(--gold)}
+  .grano-box textarea{width:100%;background:transparent;border:none;outline:none;color:var(--grano-ink);font-family:var(--mono);font-size:12px;line-height:1.55;resize:vertical;min-height:48px;padding:0}
+  .grano-box input.gm{width:100%;background:transparent;border:none;outline:none;color:#8A7F68;font-family:var(--mono);font-size:10px;margin-top:9px;padding:0}
+  .empty-note{color:var(--faint);font-size:12.5px;font-style:italic}
+
+  .addform{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .addform .row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .addform select,.addform input,.addform textarea{font-family:var(--f);font-size:12.5px;border:1px solid var(--line2);border-radius:7px;padding:7px 9px;background:var(--panel);color:var(--ink)}
+  .addform textarea{width:100%;resize:vertical;min-height:46px}
+  .addform select{flex:1}
+
+  .modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal-scrim.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:22px;width:min(380px,92vw)}
+  .modal h3{font-weight:600;margin:0 0 14px;font-size:18px}
+  .modal label{display:block;font-size:11px;color:var(--muted);margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}
+  .modal input{width:100%;font-family:var(--f);font-size:13px;border:1px solid var(--line2);border-radius:9px;padding:9px 11px;margin-bottom:13px;background:var(--panel2);color:var(--ink)}
+  .modal p{color:var(--muted)}
+  .modal .mact{display:flex;gap:8px;justify-content:flex-end}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="toolbar">
+    <button class="btn prime" onclick="showQuickNote()">Quick note</button>
+    <button class="btn" onclick="showAddPerson()">+ Person</button>
+    <button class="btn" onclick="showAddProject()">+ Project</button>
+    <button class="btn ghost" onclick="exportData()">Export</button>
+    <button class="btn ghost" onclick="document.getElementById('importfile').click()">Import</button>
+    <input type="file" id="importfile" accept="application/json" style="display:none" onchange="importData(this.files[0])">
+    <button class="btn" onclick="copyTNG()">Copy TNG prompt</button>
+    <span class="savenote" id="savenote">saved</span>
+  </div>
+  <div id="storagewarn"></div>
+
+  <div class="main">
+    <div class="hdr">
+      <span class="ttl up">Learning Experience · matrix</span>
+      <span class="rc code">LX-2026</span>
+    </div>
+    <table id="grid"><colgroup id="cols"></colgroup><thead><tr id="headrow"></tr></thead><tbody id="body"></tbody></table>
+  </div>
+
+  <div class="foot">
+    <div class="fc"><span class="chip" style="background:var(--orange)"></span><span class="lbl">Leads</span></div>
+    <div class="fc"><span class="chip" style="background:var(--panel2);border:2px solid var(--mauve)"></span><span class="lbl">Contributes</span></div>
+    <div class="fc"><span class="chip" style="background:var(--gold)"></span><span class="lbl">↳ 1:1 flag</span></div>
+    <div class="fc"><span class="chip emptychip" style="background:transparent"></span><span class="lbl">Not involved</span></div>
+  </div>
+
+  <div class="mine" id="mine"></div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dhead"><button class="close" onclick="closeDrawer()" aria-label="Close">✕</button>
+    <div class="dkind" id="dkind"></div><h2 class="dtitle" id="dtitle"></h2><div class="dmeta" id="dmeta"></div></div>
+  <div class="dbody" id="dbody"></div>
+</aside>
+<div class="modal-scrim" id="modalScrim"><div class="modal" id="modalBox"></div></div>
+
+<script>
+const KEY="teamMatrixLCARS.v1";
+const SRC_LABEL={slack:"Slack",email:"Email",oneone:"1:1",project:"Project note",manual:"Manual"};
+const TNG_PROMPT=`Project TNG — weekly team update
+
+Schedule: run every Monday at 6:00 AM PT, or the next time I open Claude on Monday.
+
+Pull ONLY from these three sources, covering the past 7 days:
+- Slack — use Glean's Slack search (my direct Slack connector isn't available). Only channels I'm a member of, including shared channels. Ignore purely social threads (congratulations, reactions).
+- Google Calendar — meetings I attended.
+- Granola — my meeting notes, including any verbatim notes I typed myself.
+
+Do not use Gmail, Jira, or any other source. Never access anyone's private DMs or inboxes; only use items I can already see.
+
+Cover these people: my reports Matthew, Dacia, and Shuren; Miriam; and my manager Polly. Cover the active matrix projects and my own projects.
+
+TAG HANDLING (important): scan all Granola and Slack text for markers written as "Tag (X)". For each marker, route that note to the person or project whose name best matches X — even when the meeting was about something else. Partial matches are fine (e.g. "Tag (Tier 3)" routes to "Tier 3 assessments"). If X matches no existing person or project, treat it as a NEW project named X and file the note there. List every newly created project at the top of the brief, and list any tags you could not confidently place, so I can catch typos.
+
+Untagged notes: file each under the person and/or project the discussion is actually about. Preserve any verbatim notes I typed in Granola exactly, unedited, in the "raw" field.
+
+Produce TWO outputs:
+
+1) A short brief I can skim — per person: what moved, what's owed each way, and anything worth my attention. Keep it tight.
+
+2) A JSON file named tng-update.json in exactly this shape, for me to Import into the matrix tool. Use plain names for person and project (not codes) — the tool resolves them. If a name isn't in my tool yet (e.g. Polly), still include it; the tool will hold it until I add that person.
+
+{
+  "notes": [
+    { "person": "Matthew", "project": "Tier 3 assessments", "source": "slack", "date": "Jul 14", "text": "..." }
+  ],
+  "granola": [
+    { "person": "Matthew", "project": "Tier 3 assessments", "meeting": "Matthew 1:1", "date": "Jul 14, 10:00", "raw": "..." }
+  ],
+  "unmatchedTags": ["..."]
+}
+
+Rules for the JSON:
+- "source" is one of: slack, oneone, project, manual. Anything from a 1:1 uses "oneone".
+- Sort newest first. Do not summarize away detail I would want to keep.
+- Every note needs a person and a project; use "Personal arc" as the project for pure development or 1:1 notes not tied to a specific project.`;
+let STORAGE_OK=true;
+try{localStorage.setItem("__t","1");localStorage.removeItem("__t");}catch(e){STORAGE_OK=false;}
+
+function seed(){return{
+  people:[{id:"matthew",name:"Matthew",role:"AI · Automation"},{id:"dacia",name:"Dacia",role:"Sana · Video"},
+    {id:"shuren",name:"Shuren",role:"Facilitation · BPO"},{id:"miriam",name:"Miriam",role:"Design · Onboarding"},
+    {id:"polly",name:"Polly",role:"Manager"}],
+  projects:[{id:"arc",name:"Personal arc",sub:"1:1 + growth",isArc:true},
+    {id:"tier3",name:"Tier 3 assessments",sub:"NetSuite + Bill Pay"},{id:"sana",name:"Sana governance",sub:"access + library"},
+    {id:"cxonb",name:"CX onboarding",sub:"blended learning"},{id:"delspec",name:"Delivery Specialist",sub:"headcount"}],
+  grid:{arc:{matthew:"contrib",dacia:"contrib",shuren:"contrib",miriam:"contrib",polly:"contrib"},
+    tier3:{matthew:"lead",shuren:"contrib",miriam:"contrib"},sana:{dacia:"lead"},
+    cxonb:{shuren:"contrib",miriam:"lead"},delspec:{shuren:"contrib",polly:"contrib"}},
+  cellSummary:{"tier3-matthew":"Lead · grading + branching","tier3-shuren":"SME · troubleshooting","tier3-miriam":"Assessment UI",
+    "sana-dacia":"Lead · access model","cxonb-shuren":"BPO alignment","cxonb-miriam":"Lead · onboarding design",
+    "delspec-shuren":"Backfill impact","arc-matthew":"Wants AI-lead scope","arc-dacia":"Governance confidence",
+    "arc-shuren":"Facilitation craft","arc-miriam":"Post-transition ownership","arc-polly":"Manager · 1:1 cadence",
+    "delspec-polly":"Approves headcount case"},
+  notes:[
+    {id:n(),ts:5,person:"matthew",project:"arc",source:"oneone",date:"Jun 30",text:"Named AI lead as a 12-month goal. Wants a project he owns end-to-end."},
+    {id:n(),ts:5,person:"matthew",project:"tier3",source:"oneone",date:"Jun 30",text:"Flagged he's stretched thin on the branching-logic build — capacity risk before the July deadline."},
+    {id:n(),ts:4,person:"matthew",project:"tier3",source:"slack",date:"Jun 28",text:"Shared auto-grading approach in #wfm_training; Shuren gave SME sign-off on the diagnostic tree."},
+    {id:n(),ts:3,person:"dacia",project:"sana",source:"slack",date:"Jun 27",text:"Confirmed concurrent-seat model in contract; access reassignment plan drafted."},
+    {id:n(),ts:5,person:"shuren",project:"delspec",source:"oneone",date:"Jun 30",text:"Raised that the Delivery Specialist backfill directly affects his current load."},
+    {id:n(),ts:2,person:"miriam",project:"cxonb",source:"project",date:"Jun 24",text:"Onboarding rebuild moved from 500-slide deck to blended modules; first module in review."},
+    {id:n(),ts:7,person:"me",project:"mp_auto",source:"slack",date:"Jul 1",text:"Confirmed in #wfm_training that shared-channel access via Glean covers everyone on the team."}],
+  granola:[
+    {id:n(),ts:5,person:"matthew",project:"tier3",meeting:"Matthew 1:1",date:"Jun 30, 10:00",raw:"- branching logic ~70% done\n- WORRIED about bandwidth (said this twice)\n- ask: can we pull Miriam in for UI?\n- follow up: chatbot api key — static hosting problem still open"},
+    {id:n(),ts:3,person:"dacia",project:"sana",meeting:"Sana governance sync",date:"Jun 27, 14:00",raw:"seats = concurrent, reassignable. locked to Jul 2027.\ndacia to draft reassignment SOP by Fri"},
+    {id:n(),ts:6,person:"shuren",project:"delspec",meeting:"Shuren 1:1",date:"Jun 30, 11:30",raw:"backfill hits HIS queue first\ndoesn't want to lose facilitation time\n-> flag to Polly in headcount case"},
+    {id:n(),ts:7,person:"me",project:"mp_auto",meeting:"Cowork setup notes",date:"Jul 1, 09:00",raw:"slack direct connector = blocked. use Glean.\nlean connector set: slack(glean), granola only.\ntest run before wiring to matrix"}],
+  myProjects:[
+    {id:"mp_auto",name:"Weekly team summary automation",color:"--lav",
+      involved:["Cowork","Glean","Granola"],
+      dates:[{id:n(),date:"Jul 11",label:"First full test run"}],
+      actions:[{id:n(),text:"Connect Slack via Glean",done:true},{id:n(),text:"Confirm connector set is lean",done:true},{id:n(),text:"Wire output into matrix",done:false}]},
+    {id:"mp_matrix",name:"Team matrix tool",color:"--cyan",
+      involved:["Me"],
+      dates:[{id:n(),date:"Jul 15",label:"Deploy to GitHub Pages"}],
+      actions:[{id:n(),text:"Finalize My Projects section",done:false},{id:n(),text:"Decide on Cowork auto-pull",done:false}]},
+    {id:"mp_delspec",name:"Delivery Specialist headcount",color:"--tan",
+      involved:["BK","Polly"],
+      dates:[{id:n(),date:"Jul 18",label:"DACI review with BK"}],
+      actions:[{id:n(),text:"Send four-option comparison to BK",done:true},{id:n(),text:"Prep Polly on backfill impact",done:false}]},
+  ],
+  assets:[
+    {id:n(),scope:"mine",key:"mp_matrix",label:"Live tool (GitHub Pages)",url:"https://dtonachio-netizen.github.io/Presentations/Team_Matrix_LCARS.html"},
+  ],
+};}
+function n(){return Math.random().toString(36).slice(2,9);}
+let S=load();
+function load(){let d=null;if(STORAGE_OK){try{const r=localStorage.getItem(KEY);if(r)d=JSON.parse(r);}catch(e){}}
+  d=d||seed();
+  ["people","projects","myProjects","notes","granola","assets"].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
+  d.grid=d.grid||{};d.cellSummary=d.cellSummary||{};
+  return d;}
+function save(){if(STORAGE_OK){try{localStorage.setItem(KEY,JSON.stringify(S));flash();return;}catch(e){}}flash("in memory only");}
+let ft;function flash(m){const el=document.getElementById("savenote");el.textContent=m||"saved ✓";clearTimeout(ft);ft=setTimeout(()=>el.textContent=m?m:"saved",1400);}
+function esc(s){return(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function proj(id){return S.projects.find(p=>p.id===id);}
+function pers(id){return S.people.find(p=>p.id===id);}
+function pad2(x){return String(x).padStart(2,"0");}
+
+function render(){
+  document.getElementById("cols").innerHTML=`<col style="width:64px"><col style="width:150px">`+S.people.map(()=>`<col>`).join("");
+  document.getElementById("headrow").innerHTML=
+    `<th class="band people" colspan="2">People<small>${pad2(S.people.length)} active</small></th>`+
+    S.people.map((p,ci)=>`<th><div class="phd" draggable="true" data-ci="${ci}" onclick="openPerson('${p.id}')" ondragstart="colDragStart(event,${ci})" ondragover="colDragOver(event,${ci})" ondragleave="dragLeave(event)" ondrop="colDrop(event,${ci})" ondragend="dragEndAll()"><span class="nm up"><span class="grip">⠿</span>${esc(p.name)}</span><span class="rl up">${esc(p.role)}</span></div></th>`).join("");
+  document.getElementById("body").innerHTML=S.projects.map((pr,i)=>{
+    const cells=S.people.map(p=>{
+      const role=(S.grid[pr.id]||{})[p.id];const key=pr.id+"-"+p.id;
+      if(pr.isArc)return `<td><div class="cell arccell up" onclick="openCell('${pr.id}','${p.id}')">${esc(S.cellSummary[key]||"—")}</div></td>`;
+      if(!role)return `<td><div class="cell empty up" onclick="openCell('${pr.id}','${p.id}')">—</div></td>`;
+      const has1=S.notes.some(x=>x.person===p.id&&x.project===pr.id&&x.source==="oneone");
+      return `<td><div class="cell ${role} up" onclick="openCell('${pr.id}','${p.id}')">${esc(S.cellSummary[key]||role)}${has1?'<span class="flag">↳ 1:1</span>':''}</div></td>`;
+    }).join("");
+    const band=i===0?`<td class="band projects" rowspan="${S.projects.length}">Projects<small>${pad2(S.projects.length)}</small></td>`:"";
+    return `<tr>${band}<td><div class="rlab ${pr.isArc?'arc':'thread'}" draggable="true" data-ri="${i}" onclick="openProject('${pr.id}')" ondragstart="rowDragStart(event,${i})" ondragover="rowDragOver(event,${i})" ondragleave="dragLeave(event)" ondrop="rowDrop(event,${i})" ondragend="dragEndAll()"><span class="tn up"><span class="grip">⠿</span>${esc(pr.name)}</span><span class="ts up">${esc(pr.sub)}</span></div></td>${cells}</tr>`;
+  }).join("");
+}
+let DRAGROW=null,DRAGCOL=null;
+function dragLeave(e){e.currentTarget.classList.remove("dragover");}
+function dragEndAll(){document.querySelectorAll(".rlab,.phd,.prow").forEach(x=>x.classList.remove("dragover","dragging"));}
+function rowDragStart(e,i){DRAGROW=i;e.currentTarget.classList.add("dragging");e.dataTransfer.effectAllowed="move";}
+function rowDragOver(e,i){e.preventDefault();e.currentTarget.classList.add("dragover");}
+function rowDrop(e,i){e.preventDefault();if(DRAGROW===null||DRAGROW===i){dragEndAll();return;}
+  const a=S.projects;const[m]=a.splice(DRAGROW,1);a.splice(i,0,m);DRAGROW=null;save();render();}
+function colDragStart(e,i){DRAGCOL=i;e.currentTarget.classList.add("dragging");e.dataTransfer.effectAllowed="move";}
+function colDragOver(e,i){e.preventDefault();e.currentTarget.classList.add("dragover");}
+function colDrop(e,i){e.preventDefault();if(DRAGCOL===null||DRAGCOL===i){dragEndAll();return;}
+  const a=S.people;const[m]=a.splice(DRAGCOL,1);a.splice(i,0,m);DRAGCOL=null;save();render();}
+
+function noteHTML(nt,label){return `<div class="note"><div class="nmeta"><span class="pill ${nt.source}">${SRC_LABEL[nt.source]}</span><span class="pill proj">${esc(label)}</span><span class="ndate">${esc(nt.date||"")}</span></div>
+  <div class="ntext" id="nt-${nt.id}">${esc(nt.text)}</div>
+  <div class="nact"><button class="btn sm ghost" onclick="startEditNote('${nt.id}')">Edit</button><button class="btn sm ghost danger" onclick="delNote('${nt.id}')">Delete</button></div></div>`;}
+function startEditNote(id){const el=document.getElementById("nt-"+id),nt=S.notes.find(x=>x.id===id);
+  el.innerHTML=`<textarea id="ed-${id}">${esc(nt.text)}</textarea>`;
+  el.nextElementSibling.innerHTML=`<button class="btn sm prime" onclick="saveEditNote('${id}')">Save</button><button class="btn sm ghost" onclick="reopenLast()">Cancel</button>`;
+  document.getElementById("ed-"+id).focus();}
+function saveEditNote(id){S.notes.find(x=>x.id===id).text=document.getElementById("ed-"+id).value;save();reopenLast();}
+function delNote(id){S.notes=S.notes.filter(x=>x.id!==id);save();render();reopenLast();}
+function editGrano(id,v){S.granola.find(x=>x.id===id).raw=v;save();}
+function editGranoMeta(id,v){const g=S.granola.find(x=>x.id===id),p=v.split(" · ");g.meeting=p[0]||"";g.date=p.slice(1).join(" · ")||"";save();}
+function delGrano(id){S.granola=S.granola.filter(x=>x.id!==id);save();reopenLast();}
+function granoHTML(g){return `<div class="grano-box">
+  <div class="glab"><span class="dot"></span>Verbatim from Granola · unedited<span class="del" onclick="delGrano('${g.id}')">Delete</span></div>
+  <textarea oninput="editGrano('${g.id}',this.value)">${esc(g.raw)}</textarea>
+  <input class="gm" value="${esc((g.meeting||"")+(g.date?" · "+g.date:""))}" oninput="editGranoMeta('${g.id}',this.value)" placeholder="Meeting · date"></div>`;}
+
+function setTitleEditable(kind,id,name){const t=document.getElementById("dtitle");if(!t)return;
+  t.innerHTML=esc(name)+` <span class="pen" title="Rename project" onclick="startRename('${kind}','${id}')">✎</span>`;}
+function startRename(kind,id){const cur=kind==="mine"?(S.myProjects.find(x=>x.id===id)||{}).name:(proj(id)||{}).name;
+  const t=document.getElementById("dtitle");if(!t)return;
+  t.innerHTML=`<input id="rn-title" value="${esc(cur||"")}" style="font:inherit;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:2px 8px;max-width:86%"> <button class="btn sm prime" onclick="commitRename('${kind}','${id}')">Save</button>`;
+  const i=document.getElementById("rn-title");i.focus();i.select();
+  i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename(kind,id);}if(e.key==="Escape"){reopenLast();}});}
+function commitRename(kind,id){const el=document.getElementById("rn-title");if(!el)return;const v=el.value.trim();if(!v){reopenLast();return;}
+  if(kind==="mine"){const m=S.myProjects.find(x=>x.id===id);if(m)m.name=v;save();renderMine();}
+  else{const pr=proj(id);if(pr)pr.name=v;save();render();}
+  reopenLast();flash("renamed ✓");}
+
+function addNoteForm(ctx){
+  const src=Object.keys(SRC_LABEL).map(k=>`<option value="${k}">${SRC_LABEL[k]}</option>`).join("");
+  let pick="";
+  if(ctx.kind==="person")pick=`<select id="af-proj">${S.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select>`;
+  if(ctx.kind==="project")pick=`<select id="af-pers">${S.people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select>`;
+  return `<div class="addform"><div class="row">${pick}<select id="af-src">${src}</select></div>
+    <textarea id="af-text" placeholder="Add a note…"></textarea>
+    <div class="row" style="margin:8px 0 0"><button class="btn sm prime" onclick="addNote('${ctx.kind}','${ctx.a||""}','${ctx.b||""}')">Add note</button>
+    <button class="btn sm" onclick="addVerbatim('${ctx.kind}','${ctx.a||""}','${ctx.b||""}')">+ Verbatim Granola note</button></div></div>`;
+}
+function addNote(kind,a,b){const t=document.getElementById("af-text").value.trim();if(!t)return;
+  const src=document.getElementById("af-src").value;let person,project;
+  if(kind==="person"){person=a;project=document.getElementById("af-proj").value;}
+  if(kind==="project"){project=a;person=document.getElementById("af-pers").value;}
+  if(kind==="cell"){project=a;person=b;}
+  if(kind==="mine"){project=a;person="me";}
+  S.notes.push({id:n(),ts:Date.now(),person,project,source:src,date:today(),text:t});
+  routeTags(t,{skipPerson:person,skipProject:project});save();render();renderMine();reopenLast();}
+function addVerbatim(kind,a,b){let person,project;
+  if(kind==="person"){person=a;project=document.getElementById("af-proj")?document.getElementById("af-proj").value:"arc";}
+  else if(kind==="project"){project=a;person=document.getElementById("af-pers")?document.getElementById("af-pers").value:S.people[0].id;}
+  else if(kind==="mine"){project=a;person="me";}
+  else{project=a;person=b;}
+  S.granola.push({id:n(),ts:Date.now(),person,project,meeting:"Manual entry",date:today(),raw:""});save();reopenLast();}
+function today(){return new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});}
+function bydate(a,b){return (b.ts||0)-(a.ts||0);}
+
+function matchTag(q){q=q.trim().toLowerCase();if(!q)return null;
+  const per=S.people.find(p=>p.name.toLowerCase().includes(q));if(per)return{person:per.id,project:"arc"};
+  const prj=S.projects.find(p=>!p.isArc&&p.name.toLowerCase().includes(q));if(prj)return{person:"me",project:prj.id};
+  const mp=S.myProjects.find(p=>p.name.toLowerCase().includes(q));if(mp)return{person:"me",project:mp.id};
+  return null;}
+function routeTags(text,skip){skip=skip||{};
+  const tags=[...text.matchAll(/tag\s*\(([^)]+)\)/ig)];
+  const clean=text.replace(/tag\s*\(([^)]+)\)/ig,"").replace(/\s+/g," ").trim()||text;
+  const seen=new Set();let added=0,misses=[];
+  tags.forEach(m=>{const q=m[1].trim().toLowerCase();if(!q||seen.has(q))return;seen.add(q);
+    const t=matchTag(q);
+    if(!t){misses.push(m[1].trim());return;}
+    if(t.person===skip.skipPerson&&t.project===skip.skipProject)return;
+    S.notes.push({id:n(),ts:Date.now(),person:t.person,project:t.project,source:"manual",date:today(),text:clean});added++;});
+  return{added,misses};}
+
+function assetsBlock(scope,key){
+  const list=(S.assets||[]).filter(a=>a.scope===scope&&a.key===key);
+  const rows=list.length?list.map(a=>`<div class="asset"><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.label||a.url)}</a><span class="x" onclick="delAsset('${a.id}')">✕</span></div>`).join(""):`<p class="empty-note">No links yet.</p>`;
+  return `<div class="seclab">Assets &amp; links</div>${rows}
+    <div class="addform"><div class="row"><input id="as-label" placeholder="Label (e.g. Figma file)" style="flex:1;font-size:12.5px;border:1px solid var(--line2);border-radius:7px;padding:7px 9px;background:var(--panel);color:var(--ink)">
+    <input id="as-url" placeholder="https://…" style="flex:1;font-size:12.5px;border:1px solid var(--line2);border-radius:7px;padding:7px 9px;background:var(--panel);color:var(--ink)"></div>
+    <button class="btn sm prime" onclick="addAsset('${scope}','${key}')">Add link</button></div>`;
+}
+function addAsset(scope,key){const url=document.getElementById("as-url").value.trim();if(!url)return;
+  const label=document.getElementById("as-label").value.trim();
+  const u=/^https?:\/\//i.test(url)?url:"https://"+url;
+  (S.assets=S.assets||[]).push({id:n(),scope,key,label,url:u});save();reopenLast();}
+function delAsset(id){S.assets=S.assets.filter(a=>a.id!==id);save();reopenLast();}
+
+let LAST=null;
+function openDrawer(k,t,m,b){document.getElementById("dkind").textContent=k;document.getElementById("dtitle").textContent=t;
+  document.getElementById("dmeta").textContent=m;document.getElementById("dbody").innerHTML=b;
+  document.getElementById("drawer").classList.add("on");document.getElementById("scrim").classList.add("on");
+  document.getElementById("drawer").setAttribute("aria-hidden","false");document.getElementById("dbody").scrollTop=0;}
+function reopenLast(){if(!LAST)return;if(LAST.t==="person")openPerson(LAST.a);if(LAST.t==="project")openProject(LAST.a);if(LAST.t==="cell")openCell(LAST.a,LAST.b);if(LAST.t==="mine")openMine(LAST.a);}
+function closeDrawer(){document.getElementById("drawer").classList.remove("on");document.getElementById("scrim").classList.remove("on");document.getElementById("drawer").setAttribute("aria-hidden","true");LAST=null;}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeDrawer();}});
+
+function openPerson(pid){LAST={t:"person",a:pid};const p=pers(pid);
+  const g=S.granola.filter(x=>x.person===pid).sort(bydate),arc=S.notes.filter(x=>x.person===pid&&x.project==="arc").sort(bydate),pn=S.notes.filter(x=>x.person===pid&&x.project!=="arc").sort(bydate);
+  let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes yet.</p>`);
+  h+=`<div class="seclab">Personal arc &amp; 1:1</div>`+(arc.length?arc.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Project involvement</div>`+(pn.length?pn.map(x=>noteHTML(x,proj(x.project).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"person",a:pid});
+  h+=assetsBlock("person",pid);
+  const act=S.projects.filter(pr=>!pr.isArc&&(S.grid[pr.id]||{})[pid]).map(pr=>pr.name).join(", ")||"none active";
+  openDrawer("Person","View all · "+p.name,p.role+" · projects: "+act,h);}
+function openProject(prid){LAST={t:"project",a:prid};const pr=proj(prid);
+  if(pr.isArc){const arc=S.notes.filter(x=>x.project==="arc").sort(bydate);
+    let h=`<div class="seclab">Growth &amp; 1:1 themes — whole team</div>`+(arc.length?arc.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+    h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});openDrawer("Thread",pr.name,"Development threads across the team",h);setTitleEditable("project",prid,pr.name);return;}
+  const g=S.granola.filter(x=>x.project===prid).sort(bydate),pn=S.notes.filter(x=>x.project===prid).sort(bydate);
+  const cast=S.people.filter(p=>(S.grid[prid]||{})[p.id]).map(p=>p.name+" ("+S.grid[prid][p.id]+")").join(", ");
+  let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes tagged here.</p>`);
+  h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});
+  h+=assetsBlock("project",prid);
+  openDrawer("Thread",pr.name,"Cast: "+(cast||"unassigned"),h);setTitleEditable("project",prid,pr.name);}
+function openCell(prid,pid){LAST={t:"cell",a:prid,b:pid};const pr=proj(prid),p=pers(pid),key=prid+"-"+pid;
+  const g=S.granola.filter(x=>x.project===prid&&x.person===pid).sort(bydate),cn=S.notes.filter(x=>x.project===prid&&x.person===pid).sort(bydate);
+  const role=(S.grid[prid]||{})[pid]||"";let h="";
+  if(!pr.isArc){h+=`<div class="seclab">Role &amp; summary</div><div class="addform"><div class="row">
+    <select id="cell-role" onchange="setRole('${prid}','${pid}',this.value)">
+    <option value="" ${role===""?"selected":""}>Not involved</option>
+    <option value="contrib" ${role==="contrib"?"selected":""}>Contributes</option>
+    <option value="lead" ${role==="lead"?"selected":""}>Leads</option></select></div>
+    <input id="cell-sum" style="width:100%;font-size:12.5px;border:1px solid var(--line2);border-radius:7px;padding:7px 9px;background:var(--panel);color:var(--ink)" value="${esc(S.cellSummary[key]||"")}" placeholder="Short summary shown in the cell" oninput="setSummary('${prid}','${pid}',this.value)"></div>`;}
+  h+=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes for this intersection.</p>`);
+  h+=`<div class="seclab">Collected notes</div>`+(cn.length?cn.map(x=>noteHTML(x,pr.name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"cell",a:prid,b:pid});
+  openDrawer("Intersection",p.name+" · "+pr.name,(pr.isArc?"Personal arc":(role||"not involved")),h);}
+function setRole(prid,pid,v){if(!S.grid[prid])S.grid[prid]={};if(v)S.grid[prid][pid]=v;else delete S.grid[prid][pid];save();render();}
+function setSummary(prid,pid,v){S.cellSummary[prid+"-"+pid]=v;save();render();}
+
+function openModal(h){document.getElementById("modalBox").innerHTML=h;document.getElementById("modalScrim").classList.add("on");}
+function closeModal(){document.getElementById("modalScrim").classList.remove("on");}
+document.getElementById("modalScrim").addEventListener("click",e=>{if(e.target.id==="modalScrim")closeModal();});
+function showAddPerson(){openModal(`<h3>Add person</h3><label>Name</label><input id="np-name" placeholder="First name">
+  <label>Role</label><input id="np-role" placeholder="e.g. Content · QA">
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn prime" onclick="addPerson()">Add</button></div>`);
+  setTimeout(()=>document.getElementById("np-name").focus(),50);}
+function addPerson(){const nm=document.getElementById("np-name").value.trim();if(!nm)return;
+  S.people.push({id:n(),name:nm,role:document.getElementById("np-role").value.trim()||"—"});save();render();closeModal();}
+function showAddProject(){openModal(`<h3>Add project</h3><label>Name</label><input id="npr-name" placeholder="Project name">
+  <label>Subtitle</label><input id="npr-sub" placeholder="short descriptor">
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn prime" onclick="addProject()">Add</button></div>`);
+  setTimeout(()=>document.getElementById("npr-name").focus(),50);}
+function addProject(){const nm=document.getElementById("npr-name").value.trim();if(!nm)return;
+  const id=n();S.projects.push({id,name:nm,sub:document.getElementById("npr-sub").value.trim()||""});S.grid[id]={};save();render();closeModal();}
+
+
+let DRAG=null;
+function renderMine(){
+  const cols=["--lav","--cyan","--tan","--salmon","--blue"];
+  const head=`<div class="mine-hd">
+    <div class="elbow">Me</div>
+    <div class="swoop"><span class="t">My projects</span><span class="rc code">${pad2(S.myProjects.length)} active</span></div>
+  </div>
+  <div class="colhead"><span>Project</span><span>Who's involved</span><span>Dates &amp; meetings</span><span>Action items</span></div>`;
+  const rows=S.myProjects.map((m,idx)=>{
+    const c=m.color||cols[idx%cols.length];
+    const chips=(m.involved||[]).map((v,ii)=>`<span class="chipx">${esc(v)}<b onclick="mineDelInvolved('${m.id}',${ii})" title="remove">✕</b></span>`).join("");
+    const dates=(m.dates||[]).map(d=>`<div class="dline"><span class="dd">${esc(d.date)}</span><span class="dl">${esc(d.label)}</span><span class="x" onclick="mineDelDate('${m.id}','${d.id}')">✕</span></div>`).join("")||`<span class="empty-note">None yet.</span>`;
+    const acts=(m.actions||[]).map(a=>`<div class="aline"><input type="checkbox" ${a.done?"checked":""} onchange="mineToggleAction('${m.id}','${a.id}')"><span class="at ${a.done?"done":""}">${esc(a.text)}</span><span class="x" onclick="mineDelAction('${m.id}','${a.id}')">✕</span></div>`).join("")||`<span class="empty-note">None yet.</span>`;
+    return `<div class="prow" draggable="true" data-idx="${idx}"
+        ondragstart="mineDragStart(event,${idx})" ondragover="mineDragOver(event,${idx})" ondragleave="mineDragLeave(event)" ondrop="mineDrop(event,${idx})" ondragend="mineDragEnd(event)">
+      <div class="pname" style="background:var(${c})" onclick="openMine('${m.id}')">
+        <span class="grip" title="drag to reorder">⠿</span><span class="pidx code">${pad2(idx+1)}</span><span class="pn">${esc(m.name)}</span></div>
+      <div class="pcol">
+        <div class="chips">${chips||'<span class="empty-note">None yet.</span>'}</div>
+        <div class="miniadd"><input id="inv-${m.id}" placeholder="Add person"><button onclick="mineAddInvolved('${m.id}')">+</button></div>
+      </div>
+      <div class="pcol">
+        <div>${dates}</div>
+        <div class="miniadd"><input class="dt" id="ddate-${m.id}" placeholder="Jul 20"><input id="dlabel-${m.id}" placeholder="What's happening"><button onclick="mineAddDate('${m.id}')">+</button></div>
+      </div>
+      <div class="pcol">
+        <div>${acts}</div>
+        <div class="miniadd"><input id="act-${m.id}" placeholder="Add action item"><button onclick="mineAddAction('${m.id}')">+</button></div>
+      </div>
+    </div>`;
+  }).join("");
+  const add=`<div class="mine-add"><button class="btn prime" onclick="mineAddProject()">+ Add project</button></div>`;
+  document.getElementById("mine").innerHTML=head+rows+add;
+}
+function mineDragStart(e,i){DRAG=i;e.currentTarget.classList.add("dragging");e.dataTransfer.effectAllowed="move";}
+function mineDragOver(e,i){e.preventDefault();e.currentTarget.classList.add("dragover");}
+function mineDragLeave(e){e.currentTarget.classList.remove("dragover");}
+function mineDragEnd(e){document.querySelectorAll(".prow").forEach(r=>r.classList.remove("dragover","dragging"));}
+function mineDrop(e,i){e.preventDefault();if(DRAG===null||DRAG===i){mineDragEnd(e);return;}
+  const arr=S.myProjects;const[moved]=arr.splice(DRAG,1);arr.splice(i,0,moved);DRAG=null;save();renderMine();}
+function mineAddInvolved(id){const el=document.getElementById("inv-"+id),v=el.value.trim();if(!v)return;
+  const m=S.myProjects.find(x=>x.id===id);(m.involved=m.involved||[]).push(v);save();renderMine();}
+function mineDelInvolved(id,ii){const m=S.myProjects.find(x=>x.id===id);m.involved.splice(ii,1);save();renderMine();}
+function mineAddDate(id){const dt=document.getElementById("ddate-"+id).value.trim(),lb=document.getElementById("dlabel-"+id).value.trim();
+  if(!dt&&!lb)return;const m=S.myProjects.find(x=>x.id===id);(m.dates=m.dates||[]).push({id:n(),date:dt||"—",label:lb||""});save();renderMine();}
+function mineDelDate(id,did){const m=S.myProjects.find(x=>x.id===id);m.dates=m.dates.filter(d=>d.id!==did);save();renderMine();}
+function mineAddAction(id){const el=document.getElementById("act-"+id),v=el.value.trim();if(!v)return;
+  const m=S.myProjects.find(x=>x.id===id);(m.actions=m.actions||[]).push({id:n(),text:v,done:false});save();renderMine();}
+function mineToggleAction(id,aid){const m=S.myProjects.find(x=>x.id===id),a=m.actions.find(x=>x.id===aid);a.done=!a.done;save();renderMine();}
+function mineDelAction(id,aid){const m=S.myProjects.find(x=>x.id===id);m.actions=m.actions.filter(a=>a.id!==aid);save();renderMine();}
+function mineAddProject(){openModal(`<h3>Add project</h3><label>Name</label><input id="mp-name" placeholder="Project name">
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn prime" onclick="mineDoAddProject()">Add</button></div>`);
+  setTimeout(()=>document.getElementById("mp-name").focus(),50);}
+function mineDoAddProject(){const nm=document.getElementById("mp-name").value.trim();if(!nm)return;
+  S.myProjects.push({id:n(),name:nm,involved:[],dates:[],actions:[]});save();renderMine();closeModal();}
+function openMine(id){LAST={t:"mine",a:id};const m=S.myProjects.find(x=>x.id===id);
+  const g=S.granola.filter(x=>x.project===id).sort(bydate),cn=S.notes.filter(x=>x.project===id).sort(bydate);
+  let h=`<div class="seclab">Verbatim from Granola</div>`+(g.length?g.map(granoHTML).join(""):`<p class="empty-note">No manual notes yet.</p>`);
+  h+=`<div class="seclab">Slack &amp; collected notes</div>`+(cn.length?cn.map(x=>noteHTML(x,m.name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
+  h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"mine",a:id});
+  h+=assetsBlock("mine",id);
+  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="mineDelProject('${id}')">Delete this project</button>`;
+  openDrawer("My project",m.name,"Self-assigned · click cells in the row to edit",h);setTitleEditable("mine",id,m.name);}
+function mineDelProject(id){S.myProjects=S.myProjects.filter(x=>x.id!==id);save();renderMine();closeDrawer();}
+
+function showQuickNote(){openModal(`<h3>Quick note</h3>
+  <p style="font-size:12.5px;margin:0 0 10px">Type your note and file it with a tag, e.g. <b style="color:var(--gold)">Tag (Matthew)</b> or <b style="color:var(--gold)">Tag (Tier 3)</b>. Add more than one to file it in several places.</p>
+  <textarea id="qn-text" style="width:100%;min-height:96px;font-family:var(--f);font-size:13px;border:1px solid var(--line2);border-radius:9px;padding:9px 11px;background:var(--panel2);color:var(--ink);resize:vertical" placeholder="Saw a risk on the assessment timeline. Tag (Tier 3)"></textarea>
+  <div id="qn-warn" style="color:var(--salmon);font-size:12px;min-height:16px;margin:4px 0 8px"></div>
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn prime" onclick="addQuickNote()">File note</button></div>`);
+  setTimeout(()=>document.getElementById("qn-text").focus(),50);}
+function addQuickNote(){const t=document.getElementById("qn-text").value.trim();const warn=document.getElementById("qn-warn");
+  if(!t){warn.textContent="Type a note first.";return;}
+  const r=routeTags(t);
+  if(r.added===0){warn.textContent=r.misses.length?("No match for: "+r.misses.join(", ")+". Check the name or project."):"Add a tag like Tag (Matthew) so it has a home.";return;}
+  save();render();renderMine();closeModal();
+  if(r.misses.length)flash("filed ✓ (no match: "+r.misses.join(", ")+")");else flash("filed ✓");}
+
+function copyTNG(){openModal(`<h3>Project TNG — run in Cowork</h3>
+  <p style="font-size:12.5px;margin:0 0 10px">Copied to your clipboard. Open Cowork (Project TNG), paste it, and run — then Import the tng-update.json it produces. If the copy didn't take, select the text below.</p>
+  <textarea readonly onclick="this.select()" style="width:100%;min-height:150px;font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:9px;padding:9px;background:var(--panel2);color:var(--ink);resize:vertical">${esc(TNG_PROMPT)}</textarea>
+  <div class="mact"><button class="btn ghost" onclick="closeModal()">Close</button><button class="btn prime" onclick="copyTNGText()">Copy again</button></div>`);
+  copyTNGText();}
+function copyTNGText(){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(TNG_PROMPT).then(()=>flash("prompt copied ✓")).catch(()=>flash("select the text to copy"));}else flash("select the text to copy");}
+function exportData(){const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="team-matrix-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);flash("exported ✓");}
+function importData(file){if(!file)return;const r=new FileReader();
+  r.onload=()=>{try{const inc=JSON.parse(r.result);mergeData(inc);save();render();renderMine();flash("imported ✓");}
+    catch(e){flash("import failed");}};
+  r.readAsText(file);document.getElementById("importfile").value="";}
+function resolvePerson(v){if(!v)return "me";const s=String(v).toLowerCase();
+  if(s==="me"||s==="darius"||s==="self")return "me";
+  const p=S.people.find(x=>x.id===v)||S.people.find(x=>x.name.toLowerCase()===s)||S.people.find(x=>x.name.toLowerCase().includes(s));
+  return p?p.id:v;}
+function resolveProject(v){if(!v)return "arc";const s=String(v).toLowerCase();
+  if(s==="arc"||s==="personal arc")return "arc";
+  const p=S.projects.find(x=>x.id===v)||S.projects.find(x=>x.name.toLowerCase()===s)||S.projects.find(x=>x.name.toLowerCase().includes(s))
+    ||S.myProjects.find(x=>x.id===v)||S.myProjects.find(x=>x.name.toLowerCase()===s)||S.myProjects.find(x=>x.name.toLowerCase().includes(s));
+  return p?p.id:v;}
+function ensureProject(name){if(!name)return "arc";
+  const id=resolveProject(name);
+  const exists=S.projects.some(p=>p.id===id)||S.myProjects.some(p=>p.id===id);
+  if(exists)return id;
+  const nid=n();S.projects.push({id:nid,name:String(name),sub:"(from tag)"});S.grid[nid]={};
+  return nid;}
+function mergeData(inc){
+  ["notes","granola"].forEach(k=>{if(Array.isArray(inc[k]))inc[k].forEach(x=>{if(!x)return;
+    x.id=x.id||n();x.ts=x.ts||Date.now();x.person=resolvePerson(x.person);x.project=ensureProject(x.project);});});
+  ["people","projects","myProjects","notes","granola","assets"].forEach(k=>{
+    if(!Array.isArray(inc[k]))return;S[k]=S[k]||[];
+    const have=new Set(S[k].map(x=>x.id));
+    inc[k].forEach(x=>{if(x&&x.id&&!have.has(x.id)){S[k].push(x);have.add(x.id);}});});
+  if(inc.grid)Object.keys(inc.grid).forEach(p=>{S.grid[p]=Object.assign({},S.grid[p]||{},inc.grid[p]);});
+  if(inc.cellSummary)Object.assign(S.cellSummary,inc.cellSummary);}
+
+if(!STORAGE_OK)document.getElementById("storagewarn").innerHTML=`<div class="banner">Heads up: this browser is blocking local storage (common inside a preview window). Edits work but won't be saved between visits. Open on GitHub Pages or directly in your browser to keep changes.</div>`;
+render();renderMine();
+</script>
+</body>
+</html>
