@@ -364,16 +364,30 @@ function granoHTML(g){return `<div class="grano-box">
   <input class="gm" value="${esc((g.meeting||"")+(g.date?" · "+g.date:""))}" oninput="editGranoMeta('${g.id}',this.value)" placeholder="Meeting · date"></div>`;}
 
 function setTitleEditable(kind,id,name){const t=document.getElementById("dtitle");if(!t)return;
-  t.innerHTML=esc(name)+` <span class="pen" title="Rename project" onclick="startRename('${kind}','${id}')">✎</span>`;}
-function startRename(kind,id){const cur=kind==="mine"?(S.myProjects.find(x=>x.id===id)||{}).name:(proj(id)||{}).name;
-  const t=document.getElementById("dtitle");if(!t)return;
-  t.innerHTML=`<input id="rn-title" value="${esc(cur||"")}" style="font:inherit;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:2px 8px;max-width:86%"> <button class="btn sm prime" onclick="commitRename('${kind}','${id}')">Save</button>`;
-  const i=document.getElementById("rn-title");i.focus();i.select();
-  i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename(kind,id);}if(e.key==="Escape"){reopenLast();}});}
+  t.innerHTML=esc(name)+` <span class="pen" title="${kind==="mine"?"Rename project":"Edit name & subtitle"}" onclick="startRename('${kind}','${id}')">✎</span>`;}
+function startRename(kind,id){const t=document.getElementById("dtitle");if(!t)return;
+  if(kind==="mine"){const cur=(S.myProjects.find(x=>x.id===id)||{}).name||"";
+    t.innerHTML=`<span style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:100%">
+      <input id="rn-title" value="${esc(cur)}" style="font:inherit;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:2px 8px;width:100%">
+      <span><button class="btn sm prime" onclick="commitRename('mine','${id}')">Save</button> <button class="btn sm ghost" onclick="reopenLast()">Cancel</button></span></span>`;
+  }else{const pr=proj(id)||{};
+    t.innerHTML=`<span style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:100%">
+      <input id="rn-title" value="${esc(pr.name||"")}" placeholder="Project name" style="font:inherit;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:2px 8px;width:100%">
+      <input id="rn-sub" value="${esc(pr.sub||"")}" placeholder="Subtitle (the smaller line)" style="font-family:var(--f);font-size:12.5px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:5px 8px;width:100%">
+      <span><button class="btn sm prime" onclick="commitRename('project','${id}')">Save</button> <button class="btn sm ghost" onclick="reopenLast()">Cancel</button></span></span>`;
+  }
+  const i=document.getElementById("rn-title");if(i){i.focus();i.select();
+    i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commitRename(kind,id);}if(e.key==="Escape")reopenLast();});}}
 function commitRename(kind,id){const el=document.getElementById("rn-title");if(!el)return;const v=el.value.trim();if(!v){reopenLast();return;}
   if(kind==="mine"){const m=S.myProjects.find(x=>x.id===id);if(m)m.name=v;save();renderMine();}
-  else{const pr=proj(id);if(pr)pr.name=v;save();render();}
-  reopenLast();flash("renamed ✓");}
+  else{const pr=proj(id);if(pr){pr.name=v;const s=document.getElementById("rn-sub");if(s)pr.sub=s.value.trim();}save();render();}
+  reopenLast();flash("saved ✓");}
+function delProject(prid){const pr=proj(prid);if(!pr)return;if(pr.isArc){flash("can't delete Personal arc");return;}
+  if(!confirm('Delete "'+pr.name+'"?\n\nThis removes the project row plus its cells and any notes or Granola filed under it. This cannot be undone.'))return;
+  S.projects=S.projects.filter(p=>p.id!==prid);delete S.grid[prid];
+  Object.keys(S.cellSummary).forEach(k=>{if(k.indexOf(prid+"-")===0)delete S.cellSummary[k];});
+  S.notes=S.notes.filter(x=>x.project!==prid);S.granola=S.granola.filter(x=>x.project!==prid);
+  save();render();closeDrawer();flash("project deleted ✓");}
 
 function addNoteForm(ctx){
   const src=Object.keys(SRC_LABEL).map(k=>`<option value="${k}">${SRC_LABEL[k]}</option>`).join("");
@@ -460,6 +474,7 @@ function openProject(prid){LAST={t:"project",a:prid};const pr=proj(prid);
   h+=`<div class="seclab">Related notes from the team</div>`+(pn.length?pn.map(x=>noteHTML(x,pers(x.person).name)).join(""):`<p class="empty-note">Nothing yet.</p>`);
   h+=`<div class="seclab">Add</div>`+addNoteForm({kind:"project",a:prid});
   h+=assetsBlock("project",prid);
+  h+=`<div class="seclab">Danger zone</div><button class="btn ghost danger" onclick="delProject('${prid}')">Delete this project</button>`;
   openDrawer("Thread",pr.name,"Cast: "+(cast||"unassigned"),h);setTitleEditable("project",prid,pr.name);}
 function openCell(prid,pid){LAST={t:"cell",a:prid,b:pid};const pr=proj(prid),p=pers(pid),key=prid+"-"+pid;
   const g=S.granola.filter(x=>x.project===prid&&x.person===pid).sort(bydate),cn=S.notes.filter(x=>x.project===prid&&x.person===pid).sort(bydate);
