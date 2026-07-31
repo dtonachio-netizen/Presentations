@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team & Projects Overview — For Polly's Return</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ color-scheme:light; --ink:#1f2430; --muted:#6b7280; --faint:#9ca3af; --line:#e6e8ec; --bg:#f6f7f9; --orange:#FF7028; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:0 24px 56px; }
+  .hero{ background:linear-gradient(120deg,#FF7028,#ff9e57); color:#fff; border-radius:0 0 20px 20px; padding:30px 30px 26px; margin-bottom:22px; }
+  .hero .eyebrow{ font-size:12px; text-transform:uppercase; letter-spacing:.14em; opacity:.9; font-weight:600; }
+  .hero h1{ font-size:27px; font-weight:800; margin:6px 0 6px; letter-spacing:-.4px; }
+  .hero .meta{ font-size:13px; opacity:.95; }
+  .lead{ font-size:15px; color:#3d4453; margin:2px 4px 22px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+  .card > h2{ font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--orange); margin:0 0 14px; font-weight:700; }
+  .people{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .pcard{ border:1px solid var(--line); border-radius:11px; padding:12px 14px; background:#fafbfc; }
+  .pcard .top{ display:flex; align-items:baseline; gap:8px; margin-bottom:5px; }
+  .pcard .nm{ font-weight:700; font-size:14.5px; }
+  .pcard .rl{ font-size:11px; color:var(--faint); }
+  .pcard .st{ font-size:12.5px; color:#3d4453; }
+  .pcard .tag{ display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:20px; margin-top:8px; }
+  .tag.out{ background:#fee2e2; color:#b91c1c; } .tag.partial{ background:#fef3c7; color:#92400e; } .tag.here{ background:#dcfce7; color:#15803d; } .tag.risk{ background:#f3e8ff; color:#7e22ce; }
+  .proj{ padding:12px 0; border-bottom:1px solid #f0f1f3; } .proj:last-child{ border-bottom:none; padding-bottom:2px; }
+  .proj h3{ font-size:14.5px; margin:0 0 4px; }
+  .proj p{ margin:0; font-size:13px; color:#3d4453; }
+  .mini{ font-size:13px; color:#3d4453; }
+  .mini p{ margin:0 0 8px; }
+  .help{ background:#fff7ed; border:1px solid #fed7aa; border-radius:14px; padding:16px 20px; }
+  .help h2{ color:#9a3412; }
+  .help ol{ margin:0; padding-left:20px; } .help li{ margin-bottom:8px; font-size:13.5px; }
+  .src{ font-size:11.5px; color:var(--faint); margin-top:16px; }
+  @media(max-width:720px){ .people{ grid-template-columns:1fr; } }
+
+  /* ---- gantt ---- */
+  .axis{ display:flex; margin-left:150px; position:relative; height:22px; border-bottom:1px solid var(--line); }
+  .tick{ position:absolute; top:0; font-size:10.5px; color:var(--muted); transform:translateX(-50%); white-space:nowrap; }
+  .grouphd{ font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--faint); font-weight:700; margin:8px 0 4px 150px; }
+  .grow{ border:none; border-top:1px dashed var(--line); margin:12px 0; }
+  .row{ display:flex; align-items:center; height:40px; border-bottom:1px solid #f5f6f7; } .row:last-child{ border-bottom:none; }
+  .name{ width:150px; flex:0 0 150px; padding-right:12px; }
+  .name .n{ font-weight:600; font-size:12.5px; line-height:1.15; } .name .r{ font-size:10px; color:var(--faint); }
+  .track{ position:relative; flex:1; height:100%; }
+  .grid{ position:absolute; inset:0; }
+  .gl{ position:absolute; top:0; bottom:0; width:1px; background:#eef0f3; } .gl.month{ background:#d7dae0; }
+  .today{ position:absolute; top:0; bottom:0; width:2px; background:#dc2626; opacity:.65; }
+  .bar{ position:absolute; top:50%; transform:translateY(-50%); height:21px; border-radius:6px; display:flex; align-items:center; padding:0 8px; font-size:10.5px; font-weight:600; color:#12212f; white-space:nowrap; overflow:hidden; }
+  .bar.arrow::after{ content:"▸"; position:absolute; right:3px; opacity:.85; }
+  .bar.tbd{ background:repeating-linear-gradient(45deg,#fde68a,#fde68a 6px,#fef3c7 6px,#fef3c7 12px); color:#92400e; border:1px dashed #f59e0b; }
+  .ms{ position:absolute; top:50%; width:10px; height:10px; background:#111827; border:1.5px solid #fff; transform:translate(-50%,-50%) rotate(45deg); box-shadow:0 0 0 1px #111827; }
+  .none{ font-size:11.5px; color:var(--faint); position:absolute; top:50%; transform:translateY(-50%); left:4px; }
+  .glegend{ display:flex; flex-wrap:wrap; gap:14px; margin:12px 2px 2px; font-size:11.5px; color:var(--muted); }
+  .glegend .k{ display:inline-flex; align-items:center; gap:6px; } .sw{ width:20px; height:11px; border-radius:4px; display:inline-block; } .dia{ width:9px; height:9px; background:#111827; transform:rotate(45deg); display:inline-block; }
+  .callout{ background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 14px; margin-top:14px; font-size:12.5px; line-height:1.6; } .callout b{ color:#9a3412; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap" style="padding-bottom:0">
+    <div class="eyebrow">Welcome back · prepared by Darius</div>
+    <h1>Team &amp; Projects Overview</h1>
+    <div class="meta">For Polly's return · covers Jul 6–23, 2026</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="lead">While you were out the team ran lean. Miriam, Matthew, and I kept the core programs moving with both Dacia and Shuren out for personal reasons. We held the line on CX and Implementation new hire, the CX/Integrations program, and the July Beta release, advanced AI Education, and got the Delivery Specialist backfill posted. Here is where the team and each priority stand, plus the few places your input will help most in week one.</p>
+
+  <div class="card">
+    <h2>Timeline · projects vs. absences</h2>
+    <div class="axis" id="axis"></div>
+    <div class="grouphd">Projects</div>
+    <div id="projRows"></div>
+    <hr class="grow">
+    <div class="grouphd">Team absences</div>
+    <div id="absRows"></div>
+    <div class="glegend" id="glegend"></div>
+    <div class="callout" id="callout"></div>
+  </div>
+
+  <div class="card">
+    <h2>Team</h2>
+    <div class="people">
+      <div class="pcard"><div class="top"><span class="nm">Dacia</span><span class="rl">Sana · Video</span></div><div class="st">PTO Jul 1–17, back and straight into CX new hire; bereavement Jul 28–29. BK and team aligned on her promotion, and I am ready to build her nomination template. She is signaling a move toward strategy/PM work, worth a conversation given her CX load.</div><span class="tag partial">Back · bereavement 7/28–29</span></div>
+      <div class="pcard"><div class="top"><span class="nm">Shuren</span><span class="rl">Facilitation · BPO</span></div><div class="st">Out (vacation/sick) Jul 2–22 and now on leave through Dec 31. The biggest structural change since you left, and the main reason we need to reorganize coverage, especially to onboard the new Delivery Specialist.</div><span class="tag out">On leave → Dec 31</span></div>
+      <div class="pcard"><div class="top"><span class="nm">Matthew</span><span class="rl">AI · Automation</span></div><div class="st">The anchor of the last three weeks. Kept Implementation and CX new hire running clean, is building scheduling automations, and intentionally deprioritized video enablement and Linear to protect delivery.</div><span class="tag here">Carrying delivery</span></div>
+      <div class="pcard"><div class="top"><span class="nm">Miriam</span><span class="rl">Design · Onboarding</span></div><div class="st">Took ownership of Dacia's and Shuren's CX Integrations work on top of her own. Level 1 champions train this week. A personal event may put her on leave, so we should have a contingency ready.</div><span class="tag risk">Possible leave</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Priorities</h2>
+    <div class="proj"><h3>Delivery Specialist</h3><p>Posted as L2 on Jul 27 (<a href="https://docs.google.com/document/d/1vy3HszNFvank08aVplS14V1-K6tkHUBNmEN0KHhiKN8/edit?tab=t.0">Interview Plan</a>, <a href="https://brex.greenhouse.io/internal_job_board/applications/8652892002">Posting</a>). The plan is an internal CX hire since facilitation can be taught. Shuren's leave means we will reorganize to onboard and support this person. Onsite interviews can begin once you are back (targeting the week of Aug 3); panel stays at three, includes Davey, and skips the values round for internal candidates. Open item: "Delivery Specialist" is not in the career path, so the title needs a quick align with Ricky and Siobhan.</p></div>
+    <div class="proj"><h3>AI Education</h3><p>On track and accelerating. Pilot with the Talent and Executive Assistant teams is targeted for Aug 11, run as a one-hour interactive Claude session with pre-work, then scaled by department using champions. Near-term work is the curriculum one-pager and pilot logistics.</p></div>
+    <div class="proj"><h3>CX / Integrations program</h3><p>Level 1 launched and champions are training this week. Level 2 is due Aug 3 and must be signed off by Aug 17 for the champion cohort. Miriam built a Claude templating system that regenerates scenario assessments from a filled template.</p></div>
+    <div class="proj"><h3>CX new hire</h3><p>Cohort started Jul 13 and week 2 is underway, going well with smoother IT onboarding than past classes. Matthew leads most sessions while Dacia ramps back in.</p></div>
+    <div class="proj"><h3>Implementation new hire</h3><p>Two starts on Jul 27, one Essentials IC and one Technical Consultant. Dacia will shadow as capacity allows, with more ICs starting in August.</p></div>
+    <div class="proj"><h3>July Beta release</h3><p>Shipped, with an LSAT of 4.59/5. Completion was low at roughly 24% as of Jul 22 against a Jul 24 due date, and Matthew is chasing CX management. Note the August release is a full GA rather than a beta drop, so the training approach shifts.</p></div>
+  </div>
+
+  <div class="card">
+    <h2>AI updates</h2>
+    <div class="mini">
+      <p>Two automation efforts worth flagging: a video-to-SOP automation for Samy Megalli, and a set of EA and Talent automations in progress (parsing emails, reconciling calendars, generating conditional email drafts, and bulk scheduling).</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Temporarily deprioritized</h2>
+    <div class="mini"><p>To protect delivery while we are lean, the coaching methodology DACI and the BE alignment work are on hold.</p></div>
+  </div>
+
+  <div class="help">
+    <h2>Where your input helps first</h2>
+    <ol>
+      <li>Kick off Delivery Specialist onsite interviews (target week of Aug 3) and settle the title with Ricky.</li>
+      <li>Approve and let me build Dacia's promotion nomination, and discuss her strategy/PM trajectory against current CX load.</li>
+      <li>Align on coverage now that Shuren is out through Dec 31.</li>
+      <li>Set a contingency in case Miriam's personal event triggers leave.</li>
+    </ol>
+  </div>
+
+  <div class="src">Sources: team pulse-check draft, Granola meeting notes, and Slack. Project spans on the timeline are planning-range estimates; Polly was out most of July (back Jul 27) and Miriam's possible leave is approximate. Confirm before wider sharing.</div>
+</div>
+
+<script>
+  const START=new Date('2026-07-01'), END=new Date('2026-08-21'), DAY=86400000;
+  const total=Math.round((END-START)/DAY)+1;
+  const idx=d=>Math.round((new Date(d)-START)/DAY);
+  const pctL=d=>idx(d)/total*100, pctW=(a,b)=>((idx(b)-idx(a)+1)/total*100);
+  const fmt=d=>new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const C={ blue:'#a9c8f0', teal:'#8fd3c4', purple:'#c9b8ec', gold:'#ffd68a', salmon:'#ffb59a', dacia:'#a9c8f0', shuren:'#ffb59a', shurenLeave:'#ff8f6e', matthew:'#9ad6a1' };
+  const PROJECTS=[
+    {name:'July Beta', role:'Release', bars:[{a:'2026-07-06',b:'2026-07-24',label:'Build → completion',c:C.salmon}], milestones:[{d:'2026-07-24',label:'Completion due Jul 24'}]},
+    {name:'CX New Hire', role:'July cohort', bars:[{a:'2026-07-13',b:'2026-08-14',label:'Tier 1 → Tier 3 onboarding',c:C.blue}], milestones:[{d:'2026-07-13',label:'Cohort start'}]},
+    {name:'Implementation NH', role:'New hires', bars:[{a:'2026-07-27',b:'2026-08-14',label:'2 starts (IC + TC) · more in Aug',c:C.teal}], milestones:[{d:'2026-07-27',label:'2 starts Jul 27'}]},
+    {name:'CX Integrations', role:'Champion program', bars:[{a:'2026-07-20',b:'2026-07-31',label:'L1 champions',c:C.purple},{a:'2026-08-01',b:'2026-08-17',label:'L2 build → sign-off',c:C.purple}], milestones:[{d:'2026-08-03',label:'L2 due Aug 3'},{d:'2026-08-17',label:'Sign-off Aug 17'}]},
+    {name:'AI Education', role:'Enablement', bars:[{a:'2026-07-21',b:'2026-08-14',label:'Scope & prep → pilot',c:C.gold}], milestones:[{d:'2026-08-11',label:'Pilot: Talent + EA (Aug 11)'}]}
+  ];
+  const PEOPLE=[
+    {name:'Dacia', role:'Sana · Video', bars:[{a:'2026-07-01',b:'2026-07-17',label:'PTO',c:C.dacia},{a:'2026-07-28',b:'2026-07-29',label:'Bereavement',c:C.dacia}]},
+    {name:'Shuren', role:'Facilitation · BPO', bars:[{a:'2026-07-02',b:'2026-07-22',label:'Vacation / sick',c:C.shuren},{a:'2026-07-23',b:'2026-08-21',label:'Leave (through Dec 31)',c:C.shurenLeave,arrow:true}]},
+    {name:'Matthew', role:'AI · Automation', bars:[{a:'2026-07-06',b:'2026-07-08',label:'PTO',c:C.matthew},{a:'2026-07-31',b:'2026-07-31',label:'PTO',c:C.matthew},{a:'2026-08-03',b:'2026-08-03',label:'PTO',c:C.matthew}]},
+    {name:'Miriam', role:'Design · Onboarding', bars:[{a:'2026-07-28',b:'2026-08-04',label:'Possible leave — TBD',tbd:true}]},
+    {name:'Darius', role:'Learning lead', bars:[], none:true}
+  ];
+  const ticks=['2026-07-01','2026-07-07','2026-07-14','2026-07-21','2026-07-28','2026-08-04','2026-08-11','2026-08-18'];
+  document.getElementById('axis').innerHTML=ticks.map(t=>`<span class="tick" style="left:${pctL(t)}%">${fmt(t)}</span>`).join('');
+  const todayL=pctL('2026-07-23');
+  function gridHTML(){ let g=ticks.map(t=>`<div class="gl" style="left:${pctL(t)}%"></div>`).join(''); g+=`<div class="gl month" style="left:${pctL('2026-08-01')}%"></div>`; g+=`<div class="today" style="left:${todayL}%"></div>`; return g; }
+  function renderRows(list){ return list.map(p=>{
+    const bars=(p.bars||[]).map(b=>{ const cls='bar'+(b.arrow?' arrow':'')+(b.tbd?' tbd':''); const style=`left:${pctL(b.a)}%;width:${pctW(b.a,b.b)}%;${b.tbd?'':`background:${b.c};`}`; return `<div class="${cls}" style="${style}" title="${b.label}">${b.label}</div>`; }).join('');
+    const ms=(p.milestones||[]).map(m=>`<div class="ms" style="left:${pctL(m.d)}%" title="${m.label}"></div>`).join('');
+    const none=p.none?`<span class="none">No time off scheduled</span>`:'';
+    return `<div class="row"><div class="name"><div class="n">${p.name}</div><div class="r">${p.role}</div></div><div class="track"><div class="grid">${gridHTML()}</div>${bars}${ms}${none}</div></div>`;
+  }).join(''); }
+  document.getElementById('projRows').innerHTML=renderRows(PROJECTS);
+  document.getElementById('absRows').innerHTML=renderRows(PEOPLE);
+  document.getElementById('glegend').innerHTML=[['July Beta',C.salmon],['CX New Hire',C.blue],['Implementation',C.teal],['CX Integrations',C.purple],['AI Education',C.gold],['Matthew off',C.matthew]].map(k=>`<span class="k"><span class="sw" style="background:${k[1]}"></span>${k[0]}</span>`).join('')+`<span class="k"><span class="dia"></span>Milestone</span><span class="k"><span class="sw" style="background:repeating-linear-gradient(45deg,#fde68a,#fde68a 5px,#fef3c7 5px,#fef3c7 10px);border:1px dashed #f59e0b"></span>Possible / unconfirmed</span>`;
+  document.getElementById('callout').innerHTML=`<b>Where absences hit the work:</b><br>
+    • <b>Shuren</b> is out across the entire window and through Dec 31 — every program is running without her, and she's the gap for onboarding the Delivery Specialist.<br>
+    • <b>Dacia's PTO through Jul 17</b> overlapped the CX New Hire start (Jul 13), so Matthew and Darius carried the launch.<br>
+    • <b>Matthew off Jul 31 &amp; Aug 3</b> lands on the Implementation starts and the CX Integrations L2 due date.<br>
+    • <b>Miriam's possible leave (late Jul–Aug)</b> overlaps CX Integrations (hers) and AI Education prep — the biggest single-point risk.<br>
+    • <b>AI Education pilot (Aug 11)</b> and <b>Integrations sign-off (Aug 17)</b> both fall after you're back.`;
+</script>
+</body>
+</html>
